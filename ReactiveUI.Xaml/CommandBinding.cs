@@ -1,0 +1,130 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reactive.Disposables;
+using System.Reactive.Linq;
+using System.Reflection;
+using System.Windows;
+using System.Windows.Input;
+
+namespace ReactiveUI.Xaml
+{
+    public interface ICreatesCommandBinding
+    {
+        /// <summary>
+        /// Returns a positive integer when this class supports 
+        /// BindCommandToObject for this particular Type. If the method
+        /// isn't supported at all, return a non-positive integer. When multiple
+        /// implementations return a positive value, the host will use the one
+        /// which returns the highest value. When in doubt, return '2' or '0'
+        /// </summary>
+        /// <param name="type">The type to query for.</param>
+        /// <param name="hasEventTarget">If true, the host intends to use a custom
+        /// event target.</param>
+        /// <returns>A positive integer if BCTO is supported, zero or a negative
+        /// value otherwise</returns>
+        int GetAffinityForObject(Type type, bool hasEventTarget);
+
+        IDisposable BindCommandToObject(ICommand command, object target, IObservable<object> commandParameter);
+        IDisposable BindCommandToObject<TEventArgs>(ICommand command, object target, IObservable<object> commandParameter, string eventName) where TEventArgs : EventArgs;
+    }
+
+    public class CreatesCommandBindingViaEvent : ICreatesCommandBinding
+    {
+        // NB: These are in priority order
+        static readonly List<Tuple<string, Type>> defaultEventsToBind = new List<Tuple<string, Type>>() {
+            Tuple.Create("Click", typeof (RoutedEventArgs)),
+            Tuple.Create("TouchUpInside", typeof (EventArgs)),
+            Tuple.Create("MouseUp", typeof (MouseButtonEventArgs)),
+        };
+
+        public int GetAffinityForObject(Type type, bool hasEventTarget)
+        {
+            if (hasEventTarget) return 5;
+
+            return defaultEventsToBind.Any(x => {
+                var ei = type.GetEvent(x.Item1, BindingFlags.Public | BindingFlags.FlattenHierarchy | BindingFlags.Instance);
+                return ei != null;
+            }) ? 3 : 0;
+        }
+
+        public IDisposable BindCommandToObject(ICommand command, object target, IObservable<object> commandParameter)
+        {
+            const BindingFlags bf = BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy;
+
+            var type = target.GetType();
+            var eventInfo = defaultEventsToBind
+                .Select(x => new { EventInfo = type.GetEvent(x.Item1, bf), Args = x.Item2 })
+                .FirstOrDefault(x => x.EventInfo != null);
+
+            if (eventInfo == null) return null;
+
+            var mi = GetType().GetMethods().First(x => x.Name == "BindCommandToObject" && x.IsGenericMethod);
+            mi = mi.MakeGenericMethod(eventInfo.Args);
+
+            return (IDisposable)mi.Invoke(this, new[] {command, target, commandParameter, eventInfo.EventInfo.Name});
+        }
+
+        public IDisposable BindCommandToObject<TEventArgs>(ICommand command, object target, IObservable<object> commandParameter, string eventName)
+            where TEventArgs : EventArgs
+        {
+            var ret = new CompositeDisposable();
+
+            object latestParameter = null;
+            ret.Add(commandParameter.Subscribe(x => latestParameter = x));
+
+            var evt = Observable.FromEventPattern<TEventArgs>(target, eventName);
+            ret.Add(evt.Subscribe(_ => {
+                if (command.CanExecute(latestParameter)) command.Execute(latestParameter);
+            }));
+
+            return ret;
+        }
+    }
+
+    public class CreatesCommandBindingViaCommandParameter : ICreatesCommandBinding
+    {
+        public int GetAffinityForObject(Type type, bool hasEventTarget)
+        {
+            if (hasEventTarget) return 0;
+
+            var propsToFind = new[] {
+                new { Name = "Command", TargetType = typeof(ICommand) },
+                new { Name = "CommandParameter", TargetType = typeof(object) },
+            };
+
+            return propsToFind.All(x => {
+                var pi = type.GetProperty(x.Name);
+                return pi != null && x.TargetType.IsAssignableFrom(pi.PropertyType);
+            }) ? 2 : 0;
+        }
+
+        public IDisposable BindCommandToObject(ICommand command, object target, IObservable<object> commandParameter)
+        {
+            var type = target.GetType();
+            var cmdPi = type.GetProperty("Command", BindingFlags.FlattenHierarchy | BindingFlags.Public | BindingFlags.Instance);
+            var cmdParamPi = type.GetProperty("CommandParameter", BindingFlags.FlattenHierarchy | BindingFlags.Public | BindingFlags.Instance);
+            var ret = new CompositeDisposable();
+
+            var originalCmd = cmdPi.GetValue(target, null);
+            var originalCmdParam = cmdParamPi.GetValue(target, null);
+            ret.Add(Disposable.Create(() => {
+                cmdPi.SetValue(target, originalCmd, null);
+                cmdParamPi.SetValue(target, originalCmdParam, null);
+            }));
+
+            ret.Add(commandParameter.Subscribe(x => cmdParamPi.SetValue(target, x, null)));
+            cmdPi.SetValue(target, command, null);
+
+            return ret;
+        }
+
+        public IDisposable BindCommandToObject<TEventArgs>(ICommand command, object target, IObservable<object> commandParameter, string eventName)
+            where TEventArgs : EventArgs
+        {
+            // NB: We should fall back to the generic Event-based handler if
+            // an event target is specified
+            return null;
+        }
+    }
+}
