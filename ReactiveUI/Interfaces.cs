@@ -318,7 +318,7 @@ namespace ReactiveUI
         IObservable<IObservedChange<object, object>> GetNotificationForProperty(object sender, string propertyName, bool beforeChanged = false);
     }
 
-    public interface IViewForViewModel
+    public interface IViewFor
     {
         object ViewModel { get; set; }
     }
@@ -326,7 +326,7 @@ namespace ReactiveUI
     /// <summary>
     /// Implement this interface on your Views to support Routing and Binding.
     /// </summary>
-    public interface IViewForViewModel<T> : IViewForViewModel
+    public interface IViewFor<T> : IViewFor
         where T : class
     {
         /// <summary>
@@ -335,6 +335,15 @@ namespace ReactiveUI
         T ViewModel { get; set; }
     }
 
+    public interface IDefaultPropertyBindingProvider
+    {
+        Tuple<string, int> GetPropertyForControl(object control);
+    }
+
+    internal interface IWantsToRegisterStuff
+    {                       
+        void Register();
+    }
 }
 
 // vim: tw=120 ts=4 sw=4 et :

@@ -31,11 +31,14 @@ namespace ReactiveUI
                 this TSender This,
                 Expression<Func<TSender, TValue>> property,
                 bool beforeChange = false)
-            where TSender : class
         {
-            var propertyNames = new LinkedList<string>(RxApp.expressionToPropertyNames(property));
+            var propertyNames = new LinkedList<string>(Reflection.ExpressionToPropertyNames(property));
             var subscriptions = new LinkedList<IDisposable>(propertyNames.Select(x => (IDisposable) null));
             var ret = new Subject<IObservedChange<TSender, TValue>>();
+
+            if (This == null) {
+                throw new ArgumentNullException("Sender");
+            }
 
             /* x => x.Foo.Bar.Baz;
              * 
@@ -70,6 +73,66 @@ namespace ReactiveUI
             });
         }
 
+        /// <summary>
+        /// ObservableForPropertyDynamic returns an Observable representing the
+        /// property change notifications for a specific property on a
+        /// ReactiveObject. This method (unlike other Observables that return
+        /// IObservedChange) guarantees that the Value property of
+        /// the IObservedChange is set.
+        /// </summary>
+        /// <param name="property">An Expression representing the property (i.e.
+        /// 'x => x.SomeProperty.SomeOtherProperty'</param>
+        /// <param name="beforeChange">If True, the Observable will notify
+        /// immediately before a property is going to change.</param>
+        /// <returns>An Observable representing the property change
+        /// notifications for the given property.</returns>
+        public static IObservable<IObservedChange<TSender, object>> ObservableForProperty<TSender>(
+                this TSender This,
+                string[] property,
+                bool beforeChange = false)
+        {
+            var propertyNames = new LinkedList<string>(property);
+            var subscriptions = new LinkedList<IDisposable>(propertyNames.Select(x => (IDisposable) null));
+            var ret = new Subject<IObservedChange<TSender, object>>();
+
+            if (This == null) {
+                throw new ArgumentNullException("Sender");
+            }
+
+            /* x => x.Foo.Bar.Baz;
+             * 
+             * Subscribe to This, look for Foo
+             * Subscribe to Foo, look for Bar
+             * Subscribe to Bar, look for Baz
+             * Subscribe to Baz, publish to Subject
+             * Return Subject
+             * 
+             * If Bar changes (notification fires on Foo), resubscribe to new Bar
+             * 	Resubscribe to new Baz, publish to Subject
+             * 
+             * If Baz changes (notification fires on Bar),
+             * 	Resubscribe to new Baz, publish to Subject
+             */
+
+            subscribeToExpressionChain(
+                This, 
+                buildPropPathFromNodePtr(propertyNames.First),
+                This, 
+                propertyNames.First, 
+                subscriptions.First, 
+                beforeChange, 
+                ret);
+
+            return Observable.Create<IObservedChange<TSender, object>>(x => {
+                var disp = ret.Subscribe(x);
+                return () => {
+                    subscriptions.ForEach(y => y.Dispose());
+                    disp.Dispose();
+                };
+            });
+        }
+
+
         static void subscribeToExpressionChain<TSender, TValue>(
                 TSender origSource,
                 string origPath,
@@ -83,18 +146,17 @@ namespace ReactiveUI
             var current = propertyNames;
             var currentSub = subscriptions;
             object currentObj = source;
-            PropertyInfo pi = null;
             ObservedChange<TSender, TValue> obsCh;
 
             while(current.Next != null) {
-                pi = RxApp.getPropertyInfoForProperty(currentObj.GetType(), current.Value);
-                if (pi == null) {
+                var getter = Reflection.GetValueFetcherForProperty(currentObj.GetType(), current.Value);
+                if (getter == null) {
                     subscriptions.List.Where(x => x != null).ForEach(x => x.Dispose());
                     throw new ArgumentException(String.Format("Property '{0}' does not exist in expression", current.Value));
                 }
 
                 if (currentObj != null) {
-                    var capture = new {current, currentObj, pi, currentSub};
+                    var capture = new {current, currentObj, getter, currentSub};
                     var toDispose = new IDisposable[2];
 
                     var valGetter = new ObservedChange<object, TValue>() {
@@ -111,7 +173,7 @@ namespace ReactiveUI
                     });
 
                     toDispose[1] = notifyForProperty(currentObj, capture.current.Value, false).Subscribe(x => {
-                        subscribeToExpressionChain(origSource, origPath, capture.pi.GetValue(capture.currentObj, null), capture.current.Next, capture.currentSub.Next, beforeChange, subject);
+                        subscribeToExpressionChain(origSource, origPath, capture.getter(capture.currentObj), capture.current.Next, capture.currentSub.Next, beforeChange, subject);
 
                         TValue newVal;
                         if (!valGetter.TryGetValue(out newVal)) {
@@ -140,7 +202,7 @@ namespace ReactiveUI
 
                 current = current.Next;
                 currentSub = currentSub.Next;
-                currentObj = pi.GetValue(currentObj, null);
+                currentObj = getter(currentObj);
             }
 
             if (currentSub.Value != null) {
@@ -152,13 +214,13 @@ namespace ReactiveUI
             }
 
             var propName = current.Value;
-            pi = RxApp.getPropertyInfoForProperty(currentObj.GetType(), current.Value);
+            var finalGetter = Reflection.GetValueFetcherForProperty(currentObj.GetType(), current.Value);
 
             currentSub.Value = notifyForProperty(currentObj, propName, beforeChange).Subscribe(x => {
                 obsCh = new ObservedChange<TSender, TValue>() {
                     Sender = origSource,
                     PropertyName = origPath,
-                    Value = (TValue)pi.GetValue(currentObj, null),
+                    Value = (TValue)finalGetter(currentObj),
                 };
 
                 subject.OnNext(obsCh);

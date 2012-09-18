@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Reactive.Linq;
+using System.Reflection;
 using System.Text;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using ReactiveUI.Xaml;
@@ -11,13 +13,13 @@ using Xunit;
 
 namespace ReactiveUI.Tests
 {
-    public class CommandBindingTests
+    public class CreatesCommandBindingTests
     {
         [Fact]
         public void CommandBinderBindsToButton()
         {
             var fixture = new CreatesCommandBindingViaCommandParameter();
-            var origCmd = new RoutedCommand();
+            var origCmd = new ReactiveAsyncCommand();
             var cmd = new ReactiveCommand();
             var input = new Button { Command = origCmd, CommandParameter = 42 };
 
@@ -58,6 +60,7 @@ namespace ReactiveUI.Tests
             Assert.False(wasCalled);
         }
 
+#if !SILVERLIGHT
         [Fact]
         public void EventBinderBindsToImplicitEvent()
         {
@@ -67,14 +70,126 @@ namespace ReactiveUI.Tests
 
             Assert.True(fixture.GetAffinityForObject(input.GetType(), false) > 0);
 
-            // NB: We don't have a way to fake a Click at the moment, verify 
-            // this via the debugger, and the unit test can just make sure the
-            // code doesn't crash :-/
+            int invokeCount = 0;
+            cmd.Subscribe(_ => invokeCount += 1);
+
             var disp = fixture.BindCommandToObject(cmd, input, Observable.Return((object) 5));
             Assert.NotNull(disp);
+            Assert.Equal(0, invokeCount);
+
+            input.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Assert.Equal(1, invokeCount);
 
             disp.Dispose();
+            input.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Assert.Equal(1, invokeCount);
+        }
+#endif
+    }
+
+    public class CommandBindViewModel : ReactiveObject
+    {
+        public ReactiveCommand _Command1;
+        public ReactiveCommand Command1 {
+            get { return _Command1; }
+            set { this.RaiseAndSetIfChanged(x => x.Command1, value); }
+        }
+
+        public ReactiveCommand _Command2;
+        public ReactiveCommand Command2 {
+            get { return _Command2; }
+            set { this.RaiseAndSetIfChanged(x => x.Command2, value); }
+        }
+
+        public CommandBindViewModel()
+        {
+            Command1 = new ReactiveCommand();
+            Command2 = new ReactiveCommand();
         }
     }
 
+    public class CommandBindView : IViewFor<CommandBindViewModel>
+    {
+        object IViewFor.ViewModel { 
+            get { return ViewModel; }
+            set { ViewModel = (CommandBindViewModel)value; } 
+        }
+
+        public CommandBindViewModel ViewModel { get; set; }
+
+        public Button Command1 { get; protected set; }
+
+        public Image Command2 { get; protected set; }
+
+        public CommandBindView()
+        {
+            Command1 = new Button();
+            Command2 = new Image();
+        }
+    }
+
+    public class CommandBindingImplementationTests
+    {
+        [Fact]
+        public void CommandBindConventionWireup()
+        {
+            var vm = new CommandBindViewModel();
+            var view = new CommandBindView() {ViewModel = vm};
+            var fixture = new CommandBinderImplementation();
+
+            Assert.Null(view.Command1.Command);
+
+            var disp = fixture.BindCommand(vm, view, x => x.Command1);
+            Assert.Equal(vm.Command1, view.Command1.Command);
+
+            var newCmd = new ReactiveCommand();
+            vm.Command1 = newCmd;
+            Assert.Equal(newCmd, view.Command1.Command);
+
+            disp.Dispose();
+            Assert.Null(view.Command1.Command);
+        }
+
+        [Fact]
+        public void CommandBindByNameWireup()
+        {
+            var vm = new CommandBindViewModel();
+            var view = new CommandBindView() {ViewModel = vm};
+            var fixture = new CommandBinderImplementation();
+
+            Assert.Null(view.Command1.Command);
+
+            var disp = fixture.BindCommand(vm, view, x => x.Command1, x => x.Command1);
+            Assert.Equal(vm.Command1, view.Command1.Command);
+
+            var newCmd = new ReactiveCommand();
+            vm.Command1 = newCmd;
+            Assert.Equal(newCmd, view.Command1.Command);
+
+            disp.Dispose();
+            Assert.Null(view.Command1.Command);
+        }
+
+#if !SILVERLIGHT
+        [Fact]
+        public void CommandBindToExplicitEventWireup()
+        {
+            var vm = new CommandBindViewModel();
+            var view = new CommandBindView() {ViewModel = vm};
+            var fixture = new CommandBinderImplementation();
+
+            int invokeCount = 0;
+            vm.Command2.Subscribe(_ => invokeCount += 1);
+
+            var disp = fixture.BindCommand(vm, view, x => x.Command2, x => x.Command2, "MouseUp");
+
+            view.Command2.RaiseEvent(new MouseButtonEventArgs(Mouse.PrimaryDevice, 0, MouseButton.Left) { RoutedEvent = Image.MouseUpEvent });
+
+            disp.Dispose();
+
+            view.Command2.RaiseEvent(new MouseButtonEventArgs(Mouse.PrimaryDevice, 0, MouseButton.Left) { RoutedEvent = Image.MouseUpEvent });
+            Assert.Equal(1, invokeCount);
+        }
+#endif
+    }
 }

@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 
 [assembly: AssemblyDescription("An MVVM framework that integrates the Reactive Extensions")]
 [assembly: AssemblyProduct("ReactiveUI")]
-[assembly: AssemblyVersion("3.2.0.0")]
+[assembly: AssemblyVersion("4.0.0.0")]
 
 [assembly: InternalsVisibleTo("ReactiveUI.Explorables")]
 [assembly: InternalsVisibleTo("ReactiveUI.Xaml")]
@@ -21,3 +21,10 @@ using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("ReactiveUI.Routing_SL5")]
 [assembly: InternalsVisibleTo("ReactiveUI.Routing_WP7")]
 [assembly: InternalsVisibleTo("ReactiveUI.Routing_WinRT")]
+[assembly: InternalsVisibleTo("ReactiveUI.NLog")]
+[assembly: InternalsVisibleTo("ReactiveUI.NLog_SL5")]
+[assembly: InternalsVisibleTo("ReactiveUI.NLog_WP7")]
+[assembly: InternalsVisibleTo("ReactiveUI.NLog_WinRT")]
+[assembly: InternalsVisibleTo("ReactiveUI.Gtk")]
+[assembly: InternalsVisibleTo("ReactiveUI.Cocoa")]
+[assembly: InternalsVisibleTo("ReactiveUI.Android")]

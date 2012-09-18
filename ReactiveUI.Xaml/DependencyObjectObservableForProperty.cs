@@ -6,9 +6,16 @@ using System.Reactive;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
+using System.Reflection;
 using System.Text;
+
+#if WINRT
+using Windows.UI.Xaml;
+using Windows.UI.Xaml.Data;
+#else
 using System.Windows;
 using System.Windows.Data;
+#endif
 
 namespace ReactiveUI.Xaml
 {
@@ -30,8 +37,18 @@ namespace ReactiveUI.Xaml
             Contract.Requires(sender != null && sender is DependencyObject);
 
             var dobj = sender as DependencyObject;
+            var type = dobj.GetType();
+
+            // Look for the DependencyProperty attached to this property name
+            var fi = type.GetField(propertyName + "Property", BindingFlags.Static | BindingFlags.Public | BindingFlags.FlattenHierarchy);
+            if (fi == null) {
+                this.Log().Debug("Tried to bind DO {0}.{1}, but DP doesn't exist. Binding as POCO object",
+                    type.FullName, propertyName);
+                var ret = new POCOObservableForProperty();
+                return ret.GetNotificationForProperty(sender, propertyName, beforeChanged);
+            }
+
             return Observable.Create<IObservedChange<object, object>>(subj => {
-                var type = dobj.GetType();
                 DependencyProperty attachedProp;
 
                 if (!attachedProperties.ContainsKey(type)) {
@@ -41,7 +58,7 @@ namespace ReactiveUI.Xaml
                     attachedProp = DependencyProperty.RegisterAttached(
                         "ListenAttached" + propertyName + this.GetHashCode().ToString("{0:x}"),
                         typeof(object), type,
-                        new PropertyMetadata((o,e) => subjects[o].Item1.OnNext(o)));
+                        new PropertyMetadata(null, (o,e) => subjects[o].Item1.OnNext(o)));
                     attachedProperties[type] = attachedProp;
                 } else {
                     attachedProp = attachedProperties[type];
@@ -57,7 +74,10 @@ namespace ReactiveUI.Xaml
                 if (!subjects.ContainsKey(sender)) {
                     var disposer = new RefcountDisposeWrapper(
                         Disposable.Create(() => {
+#if !SILVERLIGHT && !WINRT
+                            // XXX: Apparently it's simply impossible to unset a binding in SL :-/
                             BindingOperations.ClearBinding(dobj, attachedProp);
+#endif
                             subjects.Remove(dobj);
                         }));
 
@@ -70,7 +90,7 @@ namespace ReactiveUI.Xaml
                 }
 
                 var disp = subjects[sender].Item1
-                    .Select(x => new ObservedChange<object, object>() { Sender = x, PropertyName = propertyName })
+                    .Select(x => (IObservedChange<object, object>) new ObservedChange<object, object>() { Sender = x, PropertyName = propertyName })
                     .Subscribe(subj);
 
                 return Disposable.Create(() => {
