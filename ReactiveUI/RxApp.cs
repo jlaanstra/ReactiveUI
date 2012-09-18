@@ -47,10 +47,8 @@ namespace ReactiveUI
             TaskpoolScheduler = new EventLoopScheduler();
 #elif SILVERLIGHT || DOTNETISOLDANDSAD
             TaskpoolScheduler = Scheduler.ThreadPool;
-#elif WINRT            
-            TaskpoolScheduler = System.Reactive.Concurrency.ThreadPoolScheduler.Default;
 #else
-            TaskpoolScheduler = Scheduler.TaskPool;
+            TaskpoolScheduler = TaskPoolScheduler.Default;
 #endif
 
             DefaultExceptionHandler = Observer.Create<Exception>(ex => 
