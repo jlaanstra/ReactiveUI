@@ -318,7 +318,7 @@ namespace ReactiveUI.Tests
 
             try {
                 var testDeferred = new CountingTestScheduler(Scheduler.Immediate);
-                var testTaskpool = new CountingTestScheduler(Scheduler.NewThread);
+                var testTaskpool = new CountingTestScheduler(NewThreadScheduler.Default);
                 RxApp.DeferredScheduler = testDeferred; RxApp.TaskpoolScheduler = testTaskpool;
 
                 var fixture = new ReactiveAsyncCommand();
@@ -343,7 +343,7 @@ namespace ReactiveUI.Tests
 
             try {
                 var testDeferred = new CountingTestScheduler(Scheduler.Immediate);
-                var testTaskpool = new CountingTestScheduler(Scheduler.NewThread);
+                var testTaskpool = new CountingTestScheduler(NewThreadScheduler.Default);
                 RxApp.DeferredScheduler = testDeferred; RxApp.TaskpoolScheduler = testTaskpool;
 
                 var fixture = new ReactiveAsyncCommand();

@@ -156,24 +156,42 @@ namespace ReactiveUI
         IObservable<int> CollectionCountChanging { get; }
 
         /// <summary>
-        /// Fires when a collection becomes or stops being empty.
+        /// Fires whenever the number of items in a collection has changed,
+        /// providing the new Count.
         /// </summary>
-        IObservable<bool> IsEmpty { get; }
+        IObservable<bool> CollectionIsEmptyChanged { get; }
+
+        /// <summary>
+        /// Fires before a collection is about to change, providing the previous
+        /// Count.
+        /// </summary>
+        IObservable<bool> CollectionIsEmptyChanging { get; }
+
+        /// <summary>
+        /// Indicates if a collection is empty or not.
+        /// </summary>
+        bool IsEmpty { get; }
+
+        /// <summary>
+        /// Fires the <see cref="CollectionChanged"/> event with the <see cref="NotifyCollectionChangedAction.Reset"/> action on the collection.
+        /// </summary>
+        void Reset();
 
         //
         // Change Tracking
         //
 
         /// <summary>
-        /// Provides Item Changed notifications for any item in collection that
+        /// Provides Item Changing notifications for any item in collection that
         /// implements IReactiveNotifyPropertyChanged. This is only enabled when
         /// ChangeTrackingEnabled is set to True.
         /// </summary>
         IObservable<IObservedChange<object, object>> ItemChanging { get; }
 
         /// <summary>
-        /// Provides Item Changing notifications for any item in collection that
+        /// Provides Item Changed notifications for any item in collection that
         /// implements IReactiveNotifyPropertyChanged. This is only enabled when
+        /// ChangeTrackingEnabled is set to True.
         /// </summary>
         IObservable<IObservedChange<object, object>> ItemChanged { get; }
 

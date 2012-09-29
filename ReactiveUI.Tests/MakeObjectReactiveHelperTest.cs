@@ -37,8 +37,8 @@ namespace ReactiveUI.Tests
         public IObservable<IObservedChange<object, object>> Changed {
             get { return _reactiveHelper.Changed; }
         }
-        public IDisposable SuppressChangeNotifications() {
-            return _reactiveHelper.SuppressChangeNotifications();
+        public IDisposable SuppressReplaceChangeNotifications() {
+            return _reactiveHelper.SuppressReplaceChangeNotifications();
         }
     }
 

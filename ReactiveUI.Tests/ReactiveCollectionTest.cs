@@ -312,6 +312,107 @@ namespace ReactiveUI.Tests
             Assert.Equal(1, itemsAdded.Count);
             Assert.Equal(1, itemsRemoved.Count);
         }
+
+        [Fact]
+        public void ItemShouldNotBeAddedWhenBeforeItemsAdded()
+        {
+            var fixture = new ReactiveCollection<int>();
+
+            fixture.BeforeItemsAdded.Subscribe(x => Assert.True(fixture.Count == 0));
+            fixture.BeforeItemsAdded.Subscribe(x => Assert.True(fixture.Count == 0));
+            fixture.BeforeItemsAdded.Subscribe(x => Assert.True(fixture.Count == 0));
+            fixture.ItemsAdded.Subscribe(x => Assert.True(fixture.Count == 1));
+            fixture.ItemsAdded.Subscribe(x => Assert.True(fixture.Count == 1));
+            fixture.ItemsAdded.Subscribe(x => Assert.True(fixture.Count == 1));
+
+            fixture.Add(10);
+        }
+
+        [Fact]
+        public void ItemShouldNotBeRemovedWhenBeforeItemsRemoved()
+        {
+            var fixture = new ReactiveCollection<int>();
+
+            fixture.Add(10);
+
+            fixture.BeforeItemsRemoved.Subscribe(x => Assert.True(fixture.Count == 1));
+            fixture.BeforeItemsRemoved.Subscribe(x => Assert.True(fixture.Count == 1));
+            fixture.BeforeItemsRemoved.Subscribe(x => Assert.True(fixture.Count == 1));
+            fixture.CollectionCountChanging.Subscribe(x => Assert.True(fixture.Count == x));
+            fixture.ItemsRemoved.Subscribe(x => Assert.True(fixture.Count == 0));
+            fixture.ItemsRemoved.Subscribe(x => Assert.True(fixture.Count == 0));
+            fixture.ItemsRemoved.Subscribe(x => Assert.True(fixture.Count == 0));
+            fixture.CollectionCountChanged.Subscribe(x => Assert.True(fixture.Count == x));
+
+            fixture.Remove(10);
+        }
+
+        [Fact]
+        public void CollectionCountChangingAndCollectionCountChangedShouldDifferByOne()
+        {
+            var fixture = new ReactiveCollection<int>();
+
+            List<int> changing = new List<int>();
+            List<int> changed = new List<int>();
+            List<bool> emptyChanging = new List<bool>();
+            List<bool> emptyChanged = new List<bool>();
+
+            fixture.CollectionCountChanging.Subscribe(x => changing.Add(x));
+            fixture.CollectionCountChanged.Subscribe(x => changed.Add(x));
+            fixture.CollectionIsEmptyChanging.Subscribe(x => emptyChanging.Add(x));
+            fixture.CollectionIsEmptyChanged.Subscribe(x => emptyChanged.Add(x));
+
+            fixture.Add(10);
+
+            Assert.Equal<int>(new[] { 0 }, changing);
+            Assert.Equal<int>(new[] { 1 }, changed);
+            Assert.Equal(new[] { true }, emptyChanging);
+            Assert.Equal(new[] { false }, emptyChanged);
+
+            fixture.Remove(10);
+
+            Assert.Equal<int>(new[] { 0, 1 }, changing);
+            Assert.Equal<int>(new[] { 1, 0 }, changed);
+            Assert.Equal(new[] { true, false }, emptyChanging);
+            Assert.Equal(new[] { false, true }, emptyChanged);
+
+            fixture.Add(20);
+
+            Assert.Equal<int>(new[] { 0, 1, 0 }, changing);
+            Assert.Equal<int>(new[] { 1, 0, 1 }, changed);
+            Assert.Equal(new[] { true, false, true }, emptyChanging);
+            Assert.Equal(new[] { false, true, false }, emptyChanged);
+        }
+
+        [Fact]
+        public void CollectionCountObservablesShouldFireWithSameValueWhenReplacing()
+        {
+            var fixture = new ReactiveCollection<int>();
+
+            fixture.Add(10);
+            List<int> changing = new List<int>();
+            List<int> changed = new List<int>();
+            List<bool> emptyChanging = new List<bool>();
+            List<bool> emptyChanged = new List<bool>();
+
+            fixture.CollectionCountChanging.Subscribe(x => changing.Add(x));
+            fixture.CollectionCountChanged.Subscribe(x => changed.Add(x));
+            fixture.CollectionIsEmptyChanging.Subscribe(x => emptyChanging.Add(x));
+            fixture.CollectionIsEmptyChanged.Subscribe(x => emptyChanged.Add(x));
+
+            fixture[0] = 20;
+
+            Assert.Equal<int>(new[] { 1 }, changing);
+            Assert.Equal<int>(new[] { 1 }, changed);
+            Assert.Equal(new bool[0], emptyChanging);
+            Assert.Equal(new bool[0], emptyChanged);
+
+            fixture.Add(10);
+            fixture[0] = 20;
+
+            Assert.Equal<int>(new[] { 1, 1, 2 }, changing);
+            Assert.Equal<int>(new[] { 1, 2, 2 }, changed);
+        }
     }
 
 #if SILVERLIGHT
