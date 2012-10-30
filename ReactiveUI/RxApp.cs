@@ -375,8 +375,6 @@ namespace ReactiveUI
                     .SelectMany(x => _preregisteredTypes[x]
                         .Select(v => Tuple.Create(v, x.Item1, x.Item2)))
                     .ForEach(x => _register(x.Item1, x.Item2, x.Item3));
-
-                _preregisteredTypes.Clear();
             }
         }
 
@@ -391,6 +389,7 @@ namespace ReactiveUI
                 "ReactiveUI.Xaml",
                 "ReactiveUI.Gtk",
                 "ReactiveUI.Cocoa",
+                "ReactiveUI.Android",
                 "ReactiveUI.NLog",
             };
 
