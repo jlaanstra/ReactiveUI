@@ -120,7 +120,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ReactiveUI\ReactiveUI_WP8.csproj">
-      <Project>{FAEA4F2E-017C-47AF-B467-4D2C7210CDEF}</Project>
+      <Project>{884D2D0B-65CE-40CB-AE45-B1F45C4ECE76}</Project>
       <Name>ReactiveUI_WP8</Name>
     </ProjectReference>
   </ItemGroup>
