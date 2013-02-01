@@ -21,3 +21,6 @@ NuGet-Release
 
 **/AppPackages
 version-bump.patch
+MethyliumNuGet/
+MethyliumMakeRelease.ps1
+MethyliumPushRelease.ps1
