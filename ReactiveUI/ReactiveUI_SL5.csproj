@@ -57,15 +57,6 @@
     <DocumentationFile>Bin\Release\SL5\ReactiveUI_SL5.xml</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Microsoft.Threading.Tasks">
-      <HintPath>..\packages\Microsoft.Bcl.Async.1.0.14-rc\lib\sl5\Microsoft.Threading.Tasks.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.Threading.Tasks.Extensions">
-      <HintPath>..\packages\Microsoft.Bcl.Async.1.0.14-rc\lib\sl5\Microsoft.Threading.Tasks.Extensions.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.Threading.Tasks.Extensions.Silverlight">
-      <HintPath>..\packages\Microsoft.Bcl.Async.1.0.14-rc\lib\sl5\Microsoft.Threading.Tasks.Extensions.Silverlight.dll</HintPath>
-    </Reference>
     <Reference Include="mscorlib" />
     <Reference Include="System.ComponentModel.DataAnnotations, Version=5.0.5.0, Culture=neutral, PublicKeyToken=ddd0da4d3e678217, processorArchitecture=MSIL" />
     <Reference Include="System.Reactive.Core, Version=2.0.20823.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">

@@ -66,6 +66,15 @@
     <DocumentationFile>Bin\Release\WP8\ReactiveUI.Mobile_WP8.xml</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Microsoft.Threading.Tasks">
+      <HintPath>..\packages\Microsoft.Bcl.Async.1.0.14-rc\lib\wp8\Microsoft.Threading.Tasks.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Threading.Tasks.Extensions">
+      <HintPath>..\packages\Microsoft.Bcl.Async.1.0.14-rc\lib\wp8\Microsoft.Threading.Tasks.Extensions.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Threading.Tasks.Extensions.Phone">
+      <HintPath>..\packages\Microsoft.Bcl.Async.1.0.14-rc\lib\wp8\Microsoft.Threading.Tasks.Extensions.Phone.dll</HintPath>
+    </Reference>
     <Reference Include="mscorlib.Extensions" />
     <Reference Include="Newtonsoft.Json">
       <HintPath>..\ext\WP80\Newtonsoft.Json.dll</HintPath>
@@ -138,6 +147,9 @@
       <Project>{884D2D0B-65CE-40CB-AE45-B1F45C4ECE76}</Project>
       <Name>ReactiveUI_WP8</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Microsoft\$(TargetFrameworkIdentifier)\$(TargetFrameworkVersion)\Microsoft.$(TargetFrameworkIdentifier).$(TargetFrameworkVersion).Overrides.targets" />
   <Import Project="$(MSBuildExtensionsPath)\Microsoft\$(TargetFrameworkIdentifier)\$(TargetFrameworkVersion)\Microsoft.$(TargetFrameworkIdentifier).CSharp.targets" />
