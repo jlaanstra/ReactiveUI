@@ -53,7 +53,7 @@ namespace ReactiveUI.Routing
             VerticalContentAlignment = VerticalAlignment.Stretch;
 
             this.WhenAny(x => x.Router.NavigationStack, x => x.Value)
-                .SelectMany(x => x.CollectionCountChanged.StartWith(x.Count).Select(_ => x.LastOrDefault()))
+                .SelectMany(x => x.CountChanged.StartWith(x.Count).Select(_ => x.LastOrDefault()))
                 .Subscribe(vm => {
                     if (vm == null) {
                         Content = DefaultContent;
