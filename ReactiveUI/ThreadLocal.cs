@@ -39,7 +39,7 @@ namespace System.Threading
 }
 
 #if WP7 || DOTNETISOLDANDSAD
-namespace System
+namespace ReactiveUI
 {
     public class Lazy<T>
     {
