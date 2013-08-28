@@ -13,6 +13,7 @@ using System.Windows.Shapes;
 using System.Windows.Interactivity;
 using System.Linq;
 using ReactiveUI.Xaml;
+using ReactiveUI.Legacy;
 
 namespace ReactiveUI.Blend
 {
@@ -22,7 +23,8 @@ namespace ReactiveUI.Blend
     public class AsyncCommandVisualStateBehavior : Behavior<FrameworkElement>
 #endif
     {
-        public IReactiveAsyncCommand AsyncCommand {
+        public IReactiveAsyncCommand AsyncCommand
+        {
             get { return (IReactiveAsyncCommand)GetValue(AsyncCommandProperty); }
             set { SetValue(AsyncCommandProperty, value); }
         }

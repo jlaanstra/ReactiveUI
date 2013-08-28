@@ -10,7 +10,7 @@ using System.Reactive.Threading.Tasks;
 using ReactiveUI;
 using System.Threading.Tasks;
 
-namespace ReactiveUI.Xaml
+namespace ReactiveUI.Legacy
 {
     /// <summary>
     /// ReactiveAsyncCommand represents commands that run an asynchronous
@@ -108,9 +108,7 @@ namespace ReactiveUI.Xaml
             CanExecuteObservable.Subscribe(x => {
                 this.Log().Debug("Setting canExecuteLatest to {0}", x);
                 _canExecuteLatest = x;
-                if (CanExecuteChanged != null) {
-                    CanExecuteChanged(this, new EventArgs());
-                }
+                this.raiseCanExecuteChanged(EventArgs.Empty);
             });
 
             if (canExecute != null) {
@@ -209,6 +207,15 @@ namespace ReactiveUI.Xaml
         void marshalFailures(Action block)
         {
             marshalFailures(_ => block(), Unit.Default);
+        }
+
+        protected virtual void raiseCanExecuteChanged(EventArgs e)
+        {
+            var handler = this.CanExecuteChanged;
+
+            if (handler != null) {
+                handler(this, e);
+            }
         }
     }
 

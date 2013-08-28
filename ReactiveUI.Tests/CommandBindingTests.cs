@@ -47,7 +47,7 @@ namespace ReactiveUI.Tests
         public void CommandBinderBindsToButton()
         {
             var fixture = new CreatesCommandBindingViaCommandParameter();
-            var origCmd = new ReactiveAsyncCommand();
+            var origCmd = new Legacy.ReactiveAsyncCommand();
             var cmd = new ReactiveCommand();
             var input = new Button { Command = origCmd, CommandParameter = 42 };
 

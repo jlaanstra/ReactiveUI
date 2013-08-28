@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Reactive.Testing;
 using ReactiveUI.Testing;
+using ReactiveUI.Legacy;
 
 using Microsoft.Reactive.Testing;
 using ReactiveUI.Xaml;
@@ -23,9 +24,9 @@ namespace ReactiveUI.Tests
 {
     public abstract class ReactiveCommandInterfaceTest
     {
-        protected abstract IReactiveCommand createCommand(IObservable<bool> canExecute, IScheduler scheduler = null);
+        protected abstract Legacy.IReactiveCommand createCommand(IObservable<bool> canExecute, IScheduler scheduler = null);
 
-        protected abstract IReactiveCommand createRelayCommand(Func<object, bool> canExecute,
+        protected abstract Legacy.IReactiveCommand createRelayCommand(Func<object, bool> canExecute,
             IScheduler scheduler = null);
 
         [Fact]
@@ -184,15 +185,15 @@ namespace ReactiveUI.Tests
 
     public class ReactiveCommandTest : ReactiveCommandInterfaceTest
     {
-        protected override IReactiveCommand createCommand(IObservable<bool> canExecute, IScheduler scheduler = null)
+        protected override Legacy.IReactiveCommand createCommand(IObservable<bool> canExecute, IScheduler scheduler = null)
         {
-            return new ReactiveCommand(canExecute, scheduler);
+            return new Legacy.ReactiveCommand(canExecute, scheduler);
         }
 
-        protected override IReactiveCommand createRelayCommand(Func<object, bool> canExecute,
+        protected override Legacy.IReactiveCommand createRelayCommand(Func<object, bool> canExecute,
             IScheduler scheduler = null)
         {
-            return ReactiveCommand.Create(canExecute, null, scheduler);
+            return Legacy.ReactiveCommand.Create(canExecute, null, scheduler);
         }
 
         public class TheCreateCommandMethod
@@ -200,7 +201,7 @@ namespace ReactiveUI.Tests
             [Fact]
             public void CreatesCommandThatHandlesThrownExceptions()
             {
-                var command = ReactiveCommand.Create(_ => true, _ => { throw new Exception(); });
+                var command = Legacy.ReactiveCommand.Create(_ => true, _ => { throw new Exception(); });
                 Assert.NotNull(command.ThrownExceptions);
                 bool handled = false;
                 command.ThrownExceptions.Subscribe(e => handled = true);
@@ -212,15 +213,15 @@ namespace ReactiveUI.Tests
 
     public class ReactiveAsyncCommandBaseTest : ReactiveCommandInterfaceTest
     {
-        protected override IReactiveCommand createCommand(IObservable<bool> canExecute, IScheduler scheduler = null)
+        protected override Legacy.IReactiveCommand createCommand(IObservable<bool> canExecute, IScheduler scheduler = null)
         {
-            return new ReactiveAsyncCommand(canExecute, 1, scheduler);
+            return new Legacy.ReactiveAsyncCommand(canExecute, 1, scheduler);
         }
 
-        protected override IReactiveCommand createRelayCommand(Func<object, bool> canExecute,
+        protected override Legacy.IReactiveCommand createRelayCommand(Func<object, bool> canExecute,
             IScheduler scheduler = null)
         {
-            return ReactiveAsyncCommand.Create(x => 1, x => { }, canExecute, 1, scheduler);
+            return Legacy.ReactiveAsyncCommand.Create(x => 1, x => { }, canExecute, 1, scheduler);
         }
     }
 
@@ -230,7 +231,7 @@ namespace ReactiveUI.Tests
         public void RegisterAsyncFunctionSmokeTest()
         {
             (new TestScheduler()).With(sched => {
-                var fixture = new ReactiveAsyncCommand(null, 1);
+                var fixture = new Legacy.ReactiveAsyncCommand(null, 1);
                 ReactiveCollection<int> results;
 
                 results = fixture.RegisterAsyncObservable(_ =>
@@ -262,7 +263,7 @@ namespace ReactiveUI.Tests
 
             var start = sched.Now;
             sched.With(_ => {
-                var fixture = new ReactiveAsyncCommand(null, 5, sched);
+                var fixture = new Legacy.ReactiveAsyncCommand(null, 5, sched);
 
                 fixture.RegisterMemoizedFunction(x => {
                     Thread.Sleep(1000);
@@ -295,7 +296,7 @@ namespace ReactiveUI.Tests
         public void MultipleSubscribersShouldntDecrementRefcountBelowZero()
         {
             (new TestScheduler()).With(sched => {
-                var fixture = new ReactiveAsyncCommand();
+                var fixture = new Legacy.ReactiveAsyncCommand();
                 var results = new List<int>();
                 bool[] subscribers = new[] {false, false, false, false, false};
 
@@ -325,7 +326,7 @@ namespace ReactiveUI.Tests
         {
             (new TestScheduler()).With(sched => {
                 int latestInFlight = 0;
-                var fixture = new ReactiveAsyncCommand(null, 1, sched);
+                var fixture = new Legacy.ReactiveAsyncCommand(null, 1, sched);
 
                 var results = fixture
                     .RegisterAsyncObservable(_ => new[] {1, 2, 3}.ToObservable())
@@ -353,7 +354,7 @@ namespace ReactiveUI.Tests
                 RxApp.DeferredScheduler = testDeferred;
                 RxApp.TaskpoolScheduler = testTaskpool;
 
-                var fixture = new ReactiveAsyncCommand();
+                var fixture = new Legacy.ReactiveAsyncCommand();
                 var result = fixture.RegisterAsyncFunction(x => {
                     Thread.Sleep(1000);
                     return (int)x*5;
@@ -382,7 +383,7 @@ namespace ReactiveUI.Tests
                 RxApp.DeferredScheduler = testDeferred;
                 RxApp.TaskpoolScheduler = testTaskpool;
 
-                var fixture = new ReactiveAsyncCommand();
+                var fixture = new Legacy.ReactiveAsyncCommand();
                 var result = fixture.RegisterAsyncObservable(x =>
                     Observable.Return((int)x*5).Delay(TimeSpan.FromSeconds(1), RxApp.TaskpoolScheduler));
 
@@ -410,7 +411,7 @@ namespace ReactiveUI.Tests
                     sched.OnNextAt(1100, false)
                     );
 
-                var fixture = new ReactiveAsyncCommand(canExecute);
+                var fixture = new Legacy.ReactiveAsyncCommand(canExecute);
                 int calculatedResult = -1;
                 bool latestCanExecute = false;
 
@@ -473,7 +474,7 @@ namespace ReactiveUI.Tests
                     sched.OnNextAt(250, true)
                     );
 
-                var fixture = new ReactiveAsyncCommand(canExecute);
+                var fixture = new Legacy.ReactiveAsyncCommand(canExecute);
 
                 fixture.RegisterAsyncTask(_ => DummyTestFunction());
 
@@ -498,7 +499,7 @@ namespace ReactiveUI.Tests
                     sched.OnNextAt(250, true)
                    );
 
-                var fixture = new ReactiveAsyncCommand(canExecute, initialCondition:false);
+                var fixture = new Legacy.ReactiveAsyncCommand(canExecute, initialCondition: false);
                 
                 fixture.RegisterAsyncTask(_ => DummyTestFunction());
 
@@ -522,7 +523,7 @@ namespace ReactiveUI.Tests
                     sched.OnNextAt(250, true)
                     );
 
-                var fixture = new ReactiveCommand(canExecute);
+                var fixture = new Legacy.ReactiveCommand(canExecute);
 
                 Assert.True(fixture.CanExecute(null));
 
@@ -545,7 +546,7 @@ namespace ReactiveUI.Tests
                     sched.OnNextAt(250, true)
                    );
 
-                var fixture = new ReactiveCommand(canExecute, initialCondition:false);
+                var fixture = new Legacy.ReactiveCommand(canExecute, initialCondition: false);
 
                 Assert.False(fixture.CanExecute(null));
 

@@ -11,60 +11,53 @@ using ReactiveUI;
 namespace ReactiveUI.Xaml
 {
     /// <summary>
-    /// IReactiveCommand is an Rx-enabled version of ICommand that is also an
-    /// Observable. Its Observable fires once for each invocation of
-    /// ICommand.Execute and its value is the CommandParameter that was
-    /// provided.
+    /// IReactiveCommand represents an ICommand which also notifies when it is
+    /// executed (i.e. when Execute is called) via IObservable. Conceptually,
+    /// this represents an Event, so as a result this IObservable should never
+    /// OnComplete or OnError.
+    /// 
+    /// In previous versions of ReactiveUI, this interface was split into two
+    /// separate interfaces, one to handle async methods and one for "standard"
+    /// commands, but these have now been merged - every ReactiveCommand is now
+    /// a ReactiveAsyncCommand.
     /// </summary>
-    public interface IReactiveCommand : ICommand, IObservable<object>, IHandleObservableErrors
+    public interface IReactiveCommand : IHandleObservableErrors, IObservable<object>, ICommand, IDisposable, IEnableLogger
     {
         /// <summary>
-        /// Fires whenever the CanExecute of the ICommand changes. Note that
-        /// this should not fire notifications unless the CanExecute changes
-        /// (i.e. it should not fire 'true', 'true').
+        /// Registers an asynchronous method to be called whenever the command
+        /// is Executed. This method returns an IObservable representing the
+        /// asynchronous operation, and is allowed to OnError / should OnComplete.
         /// </summary>
+        /// <returns>A filtered version of the Observable which is marshaled 
+        /// to the UI thread. This Observable should only report successes and
+        /// instead send OnError messages to the ThrownExceptions property.
+        /// </returns>
+        /// <param name="asyncBlock">The asynchronous method to call.</param>
+        IObservable<T> RegisterAsync<T>(Func<object, IObservable<T>> asyncBlock);
+
+        /// <summary>
+        /// Gets a value indicating whether this instance can execute observable.
+        /// </summary>
+        /// <value><c>true</c> if this instance can execute observable; otherwise, <c>false</c>.</value>
         IObservable<bool> CanExecuteObservable { get; }
-    }
-
-    /// <summary>
-    /// IReactiveAsyncCommand represents commands that run an asynchronous
-    /// operation in the background when invoked.
-    /// </summary>
-    public interface IReactiveAsyncCommand : IReactiveCommand
-    {
-        /// <summary>
-        /// Fires whenever the number of asynchronous operations in-flight (i.e.
-        /// currently running) changes and provides the new Count.
-        /// </summary>
-        IObservable<int> ItemsInflight { get; }
 
         /// <summary>
-        /// Should be fired whenever an async operation starts.
+        /// Gets a value indicating whether this instance is executing. This 
+        /// Observable is guaranteed to always return a value immediately (i.e.
+        /// it is backed by a BehaviorSubject), meaning it is safe to determine
+        /// the current state of the command via IsExecuting.First()
         /// </summary>
-        ISubject<Unit> AsyncStartedNotification { get; }
+        /// <value><c>true</c> if this instance is executing; otherwise, <c>false</c>.</value>
+        IObservable<bool> IsExecuting { get; }
 
         /// <summary>
-        /// Should be fired whenever an async operation completes.
+        /// Gets a value indicating whether this 
+        /// <see cref="ReactiveUI.IReactiveCommand"/> allows concurrent 
+        /// execution. If false, the CanExecute of the command will be disabled
+        /// while async operations are currently in-flight.
         /// </summary>
-        ISubject<Unit> AsyncCompletedNotification { get; }
-
-        /// <summary>
-        /// RegisterAsyncObservable registers an Rx-based async method whose
-        /// results will be returned on the UI thread.
-        /// </summary>
-        /// <param name="calculationFunc">A calculation method that returns a
-        /// future result, such as a method returned via
-        /// Observable.FromAsyncPattern.</param>
-        /// <returns>An Observable representing the items returned by the
-        /// calculation result. Note that with this method it is possible with a
-        /// calculationFunc to return multiple items per invocation of Execute.</returns>
-        IObservable<TResult> RegisterAsyncObservable<TResult>(Func<object, IObservable<TResult>> calculationFunc);
-
-        /// <summary>
-        /// The maximum number of in-flight
-        /// operations at a time - defaults to one.
-        /// </summary>
-        int MaximumConcurrent { get; }
+        /// <value><c>true</c> if allows concurrent execution; otherwise, <c>false</c>.</value>
+        bool AllowsConcurrentExecution { get; }
     }
 }
 
