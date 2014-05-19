@@ -1,4 +1,5 @@
 using System;
+using System.Reflection;
 using Xunit;
 using ReactiveUI.Cocoa;
 
@@ -24,10 +25,10 @@ namespace ReactiveUI.Tests
         public void MakeSureKVOBindingsBindToKVOThings()
         {
             var input = new FooController();
-            var fixture = new KVOObservableForProperty();
+            var fixture = new KVOObservableForExpression();
 
-            Assert.NotEqual(0, fixture.GetAffinityForObject(typeof(FooController), "View"));
-            Assert.Equal(0, fixture.GetAffinityForObject(typeof(FooController), "ViewModel"));
+            Assert.NotEqual(0, fixture.GetAffinityForMember(typeof(FooController), typeof(FooController).GetRuntimeProperty("View")));
+            Assert.Equal(0, fixture.GetAffinityForMember(typeof(FooController), typeof(FooController).GetRuntimeProperty("ViewModel")));
         }
     }
 }

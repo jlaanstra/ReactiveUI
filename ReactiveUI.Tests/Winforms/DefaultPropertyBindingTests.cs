@@ -3,7 +3,7 @@ using System.Reactive.Disposables;
 using System.Windows.Forms;
 using Xunit;
 using ReactiveUI.Winforms;
-
+using System.Linq.Expressions;
 
 namespace ReactiveUI.Tests.Winforms
 {
@@ -15,15 +15,16 @@ namespace ReactiveUI.Tests.Winforms
             var input = new TextBox();
             var fixture = new WinformsCreatesObservableForProperty();
 
-            Assert.NotEqual(0, fixture.GetAffinityForObject(typeof(TextBox), "Text"));
+            Expression<Func<TextBox, string>> expr = t => t.Text;
+            Assert.NotEqual(0, fixture.GetAffinityForMember(fixture.GetType(), expr.Body.GetMemberInfo()));
 
-            var output = fixture.GetNotificationForProperty(input, "Text").CreateCollection();
+            var output = fixture.GetNotificationForExpression(input, expr.Body).CreateCollection();
             Assert.Equal(0, output.Count);
 
             input.Text = "Foo";
             Assert.Equal(1, output.Count);
             Assert.Equal(input, output[0].Sender);
-            Assert.Equal("Text", output[0].PropertyName);
+            Assert.Equal("Text", output[0].Expression.GetMemberInfo().Name);
             Assert.Equal("Foo", output[0].Value);
 
             output.Dispose();
@@ -38,15 +39,16 @@ namespace ReactiveUI.Tests.Winforms
             var input = new AThirdPartyNamespace.ThirdPartyControl();
             var fixture = new WinformsCreatesObservableForProperty();
 
-            Assert.NotEqual(0, fixture.GetAffinityForObject(typeof(AThirdPartyNamespace.ThirdPartyControl), "Value"));
+            Expression<Func<AThirdPartyNamespace.ThirdPartyControl, string>> expr = t => t.Text;
+            Assert.NotEqual(0, fixture.GetAffinityForMember(fixture.GetType(), expr.Body.GetMemberInfo()));
 
-            var output = fixture.GetNotificationForProperty(input, "Value").CreateCollection();
+            var output = fixture.GetNotificationForExpression(input, expr.Body).CreateCollection();
             Assert.Equal(0, output.Count);
 
             input.Value = "Foo";
             Assert.Equal(1, output.Count);
             Assert.Equal(input, output[0].Sender);
-            Assert.Equal("Value", output[0].PropertyName);
+            Assert.Equal("Value", output[0].GetPropertyName());
             Assert.Equal("Foo", output[0].Value);
 
             output.Dispose();

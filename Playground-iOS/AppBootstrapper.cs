@@ -61,7 +61,7 @@ namespace MobileSample_iOS
 
             toRegister = null;
 
-            var items = Kernel.ResolveAll(typeof(ICreatesObservableForProperty), true).ToArray();
+            var items = Kernel.ResolveAll(typeof(ICreatesObservableForExpression), true).ToArray();
 
            // Router.Navigate.Go<iOSPlaygroundViewModel>();
         }

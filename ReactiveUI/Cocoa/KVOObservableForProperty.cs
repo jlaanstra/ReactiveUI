@@ -11,6 +11,7 @@ using Splat;
 #if UIKIT
 using MonoTouch.UIKit;
 using MonoTouch.Foundation;
+using System.Linq.Expressions;
 #else
 using MonoMac.AppKit;
 using MonoMac.Foundation;
@@ -25,15 +26,17 @@ namespace ReactiveUI.Cocoa
     /// tell whether a given property on an object is Key-Value Observable, we 
     /// only have to hope for the best :-/
     /// </summary>
-    public class KVOObservableForProperty : ICreatesObservableForProperty
+    public class KVOObservableForExpression : ICreatesObservableForExpression
     {
-        static readonly MemoizingMRUCache<Tuple<Type, string>, bool> declaredInNSObject;
+        // Although MemberInfo has a "DeclaredType" property,
+        // this is not enough because the property can be declared on an interface.
+        static readonly MemoizingMRUCache<Tuple<Type, MemberInfo>, bool> declaredInNSObject;
 
-        static KVOObservableForProperty()
+        static KVOObservableForExpression()
         {
             var monotouchAssemblyName = typeof(NSObject).Assembly.FullName;
 
-            declaredInNSObject = new MemoizingMRUCache<Tuple<Type, string>, bool>((pair, _) => {
+            declaredInNSObject = new MemoizingMRUCache<Tuple<Type, MemberInfo>, bool>((pair, _) => {
                 var thisType = pair.Item1;
 
                 // Types that aren't NSObjects at all are uninteresting to us
@@ -42,7 +45,7 @@ namespace ReactiveUI.Cocoa
                 }
 
                 while(thisType != null) {
-                    if (thisType.GetMembers(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly).Any(x => x.Name == pair.Item2)) {
+                    if (thisType.GetMembers(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly).Any(x => x.Name == pair.Item2.Name)) {
                         // NB: This is a not-completely correct way to detect if
                         // an object is defined in an Obj-C class (it will fail if
                         // you're using a binding to a 3rd-party Obj-C library).
@@ -58,14 +61,14 @@ namespace ReactiveUI.Cocoa
         }
 
 
-        public int GetAffinityForObject(Type type, string propertyName, bool beforeChanged = false)
+        public int GetAffinityForMember(Type type, MemberInfo member, bool beforeChanged = false)
         {
             lock (declaredInNSObject) {
-                return declaredInNSObject.Get(Tuple.Create(type, propertyName)) ? 15 : 0;
+                return declaredInNSObject.Get(Tuple.Create(type, member)) ? 15 : 0;
             }
         }
 
-        public IObservable<IObservedChange<object, object>> GetNotificationForProperty(object sender, string propertyName, bool beforeChanged = false)
+        public IObservable<IObservedChange<object, object>> GetNotificationForExpression(object sender, Expression expression, bool beforeChanged = false)
         {
             var obj = sender as NSObject;
             if (obj == null) {
@@ -74,11 +77,11 @@ namespace ReactiveUI.Cocoa
 
             return Observable.Create<IObservedChange<object, object>>(subj => {
                 var bobs = new BlockObserveValueDelegate((key,s,_) => {
-                    subj.OnNext(new ObservedChange<object, object>(s, propertyName));
+                    subj.OnNext(new ObservedChange<object, object>(s, expression));
                 });
                 var pin = GCHandle.Alloc(bobs);
 
-                var keyPath = (NSString)findCocoaNameFromNetName(sender.GetType(), propertyName);
+                var keyPath = (NSString)findCocoaNameFromNetName(sender.GetType(), expression.GetMemberInfo());
 
                 obj.AddObserver(bobs, keyPath, beforeChanged ? NSKeyValueObservingOptions.Old : NSKeyValueObservingOptions.New, IntPtr.Zero);
 
@@ -89,7 +92,7 @@ namespace ReactiveUI.Cocoa
             });
         }
 
-        string findCocoaNameFromNetName(Type senderType, string propertyName)
+        string findCocoaNameFromNetName(Type senderType, MemberInfo memberInfo)
         {
             bool propIsBoolean = false;
 
@@ -106,6 +109,7 @@ namespace ReactiveUI.Cocoa
             return attr.Selector;
 
         attemptGuess:
+            var propertyName = memberInfo.Name;
             if (propIsBoolean) propertyName = "Is" + propertyName;
             return Char.ToLowerInvariant(propertyName[0]).ToString() + propertyName.Substring(1);
         }

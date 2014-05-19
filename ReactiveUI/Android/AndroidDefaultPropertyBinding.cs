@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using ReactiveUI;
 using Android.Widget;
+using System.Reflection;
 
 namespace ReactiveUI.Android
 {
@@ -10,21 +11,21 @@ namespace ReactiveUI.Android
     /// </summary>
     public class AndroidDefaultPropertyBinding : IDefaultPropertyBindingProvider
     {
-        public Tuple<string, int> GetPropertyForControl(object control)
+        public Tuple<MemberInfo, int> GetPropertyForControl(object control)
         {
             // NB: These are intentionally arranged in priority order from most
             // specific to least specific.
             var items = new[] {
-                new { Type = typeof(TextView), Property = "Text" },
-                new { Type = typeof(ImageView), Property = "Drawable" },
-                new { Type = typeof(ProgressBar), Property = "Progress" },
-                new { Type = typeof(CompoundButton), Property = "Checked" },
+                typeof(TextView).GetProperty("Text"),
+                typeof(ImageView).GetProperty("Drawable"),
+                typeof(ProgressBar).GetProperty("Progress"),
+                typeof(CompoundButton).GetProperty("Checked"),
             };
 
             var type = control.GetType();
-            var kvp = items.FirstOrDefault(x => x.Type.IsAssignableFrom(type));
+            var kvp = items.FirstOrDefault(x => x.DeclaringType.IsAssignableFrom(type));
 
-            return kvp != null ? Tuple.Create(kvp.Property, 5) : null;
+            return kvp != null ? Tuple.Create<MemberInfo,int>(kvp, 5) : null;
         }
     }
 }

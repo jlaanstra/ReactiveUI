@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Reflection;
 
 #if UIKIT
 using MonoTouch.UIKit;
@@ -14,34 +15,34 @@ namespace ReactiveUI.Cocoa
     /// </summary>
     public class CocoaDefaultPropertyBinding : IDefaultPropertyBindingProvider
     {
-        public Tuple<string, int> GetPropertyForControl(object control)
+        public Tuple<MemberInfo, int> GetPropertyForControl(object control)
         {
             // NB: These are intentionally arranged in priority order from most
             // specific to least specific.
 #if UIKIT
             var items = new[] {
-                new { Type = typeof(UISlider), Property = "Value" },
-                new { Type = typeof(UITextView), Property = "Text" },
-                new { Type = typeof(UITextField), Property = "Text" },
-                new { Type = typeof(UIButton), Property = "Title" },
-                new { Type = typeof(UIImageView), Property = "Image" },
+                typeof(UISlider).GetRuntimeProperty("Value"),
+                typeof(UITextView).GetRuntimeProperty("Text"),
+                typeof(UITextField).GetRuntimeProperty("Text"),
+                typeof(UIButton).GetRuntimeProperty("Title"),
+                typeof(UIImageView).GetRuntimeProperty("Image"),
             };
 #else
             var items = new[] {
-                new { Type = typeof(NSSlider), Property = "DoubleValue" },
-                new { Type = typeof(NSTextView), Property = "Value" },
-                new { Type = typeof(NSTextField), Property = "StringValue" },
-                new { Type = typeof(NSLevelIndicator), Property = "DoubleValue" },
-                new { Type = typeof(NSProgressIndicator), Property = "DoubleValue" },
-                new { Type = typeof(NSButton), Property = "Title" },
-                new { Type = typeof(NSImageView), Property = "Image" },
+                typeof(NSSlider).GetRuntimeProperty("DoubleValue"),
+                typeof(NSTextView).GetRuntimeProperty("Value",
+                typeof(NSTextField).GetRuntimeProperty("StringValue",
+                typeof(NSLevelIndicator).GetRuntimeProperty("DoubleValue",
+                typeof(NSProgressIndicator).GetRuntimeProperty("DoubleValue"),
+                typeof(NSButton).GetRuntimeProperty("Title"),
+                typeof(NSImageView).GetRuntimeProperty("Image"),
             };
 #endif
 
             var type = control.GetType();
-            var kvp = items.FirstOrDefault(x => x.Type.IsAssignableFrom(type));
+            var member = items.FirstOrDefault(x => x.DeclaringType.IsAssignableFrom(type));
 
-            return kvp != null ? Tuple.Create(kvp.Property, 5) : null;
+            return member != null ? Tuple.Create<MemberInfo,int>(member, 5) : null;
         }
     }
 }

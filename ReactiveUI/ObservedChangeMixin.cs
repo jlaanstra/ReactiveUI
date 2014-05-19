@@ -7,8 +7,17 @@ using System.Reflection;
 
 namespace ReactiveUI
 {
-    public static class ObservedChangedMixin
+    public static class ObservedChangeMixin
     {
+        /// <summary>
+        /// Returns the string representing the changed property.
+        /// </summary>
+        /// <returns>The current value of the property</returns>
+        public static string GetPropertyName<TSender, TValue>(this IObservedChange<TSender, TValue> This)
+        {
+            return Reflection.ExpressionToPropertyNames(This.Expression);
+        }
+
         /// <summary>
         /// Returns the current value of a property given a notification that
         /// it has changed.
@@ -18,7 +27,7 @@ namespace ReactiveUI
         {
             TValue ret;
             if (!This.TryGetValue(out ret)) {
-                throw new Exception(String.Format("One of the properties in the expression '{0}' was null", This.PropertyName));
+                throw new Exception(String.Format("One of the properties in the expression '{0}' was null", This.GetPropertyName()));
             }
             return ret;
         }
@@ -39,27 +48,24 @@ namespace ReactiveUI
                 return true;
             }
 
-            object current = This.Sender;
-            string fullPropName = This.PropertyName;
-
-            return Reflection.TryGetValueForPropertyChain(out changeValue, current, fullPropName.Split('.'));
+            return Reflection.TryGetValueForExpressionChain(This.Sender, This.Expression.GetExpressionChain(), out changeValue);
         }
 
-        /// <summary>
-        /// Given a fully filled-out IObservedChange object, SetValueToProperty
-        /// will apply it to the specified object (i.e. it will ensure that
-        /// target.property == This.GetValue() and "replay" the observed change
-        /// onto another object)
-        /// </summary>
-        /// <param name="target">The target object to apply the change to.</param>
-        /// <param name="property">The target property to apply the change to.</param>
-        internal static void SetValueToProperty<TSender, TValue, TTarget>(
-            this IObservedChange<TSender, TValue> This, 
-            TTarget target,
-            Expression<Func<TTarget, TValue>> property)
-        {
-            Reflection.SetValueToPropertyChain(target, Reflection.ExpressionToPropertyNames(property), This.GetValue());
-        }
+        ///// <summary>
+        ///// Given a fully filled-out IObservedChange object, SetValueToProperty
+        ///// will apply it to the specified object (i.e. it will ensure that
+        ///// target.property == This.GetValue() and "replay" the observed change
+        ///// onto another object)
+        ///// </summary>
+        ///// <param name="target">The target object to apply the change to.</param>
+        ///// <param name="property">The target property to apply the change to.</param>
+        //internal static void SetValueToProperty<TSender, TValue, TTarget>(
+        //    this IObservedChange<TSender, TValue> This, 
+        //    TTarget target,
+        //    Expression<Func<TTarget, TValue>> property)
+        //{
+        //    Reflection.SetValueToExpressionChain(target, Reflection.ExpressionToPropertyNames(property), This.GetValue());
+        //}
 
         /// <summary>
         /// Given a stream of notification changes, this method will convert 

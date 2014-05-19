@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -32,7 +34,7 @@ namespace ReactiveUI
         /// <value>
         /// The property names of the path.
         /// </value>
-        string[] ViewModelPath { get; }
+        Expression ViewModelPath { get; }
 
         /// <summary>
         /// An enumerable representing the properties on the viewmodel bound to the view.
@@ -60,7 +62,7 @@ namespace ReactiveUI
         /// <value>
         /// The property names of the path.
         /// </value>
-        string[] ViewPath { get; }
+        Expression ViewPath { get; }
 
         /// <summary>
         /// An enumerable representing the properties on the view bound to the viewmodel.
@@ -104,7 +106,7 @@ namespace ReactiveUI
         /// <param name="viewModelPath">The view model path.</param>
         /// <param name="direction">The direction.</param>
         /// <param name="bindingDisposable">The binding disposable.</param>
-        public ReactiveBinding(TView view, TViewModel viewModel, string[] viewPath, string[] viewModelPath, 
+        public ReactiveBinding(TView view, TViewModel viewModel, Expression viewPath, Expression viewModelPath, 
             IObservable<TValue> changed, BindingDirection direction, IDisposable bindingDisposable)
         {
             this.View = view;
@@ -133,7 +135,7 @@ namespace ReactiveUI
         /// <value>
         /// The property names of the path.
         /// </value>
-        public string[] ViewModelPath { get; private set; }
+        public Expression ViewModelPath { get; private set; }
 
         /// <summary>
         /// An enumerable representing the properties on the viewmodel bound to the view.
@@ -147,7 +149,7 @@ namespace ReactiveUI
         {
             get {
                 IObservedChange<object, object>[] fetchedValues;
-                Reflection.TryGetAllValuesForPropertyChain(out fetchedValues, ViewModel, ViewModelPath);
+                Reflection.TryGetAllValuesForExpressionChain(ViewModel, ViewModelPath, out fetchedValues);
                 return fetchedValues;
             }
         }
@@ -168,7 +170,7 @@ namespace ReactiveUI
         /// <value>
         /// The property names of the path.
         /// </value>
-        public string[] ViewPath { get; private set;}
+        public Expression ViewPath { get; private set;}
 
         /// <summary>
         /// An enumerable representing the properties on the view bound to the viewmodel.
@@ -182,7 +184,7 @@ namespace ReactiveUI
         {
             get {
                 IObservedChange<object, object>[] fetchedValues;
-                Reflection.TryGetAllValuesForPropertyChain(out fetchedValues, View, ViewPath);
+                Reflection.TryGetAllValuesForExpressionChain(View, ViewPath, out fetchedValues);
                 return fetchedValues;
             }
         }

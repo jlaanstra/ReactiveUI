@@ -19,34 +19,32 @@ namespace ReactiveUI.Xaml
 {
     public class XamlDefaultPropertyBinding : IDefaultPropertyBindingProvider
     {
-        public Tuple<string, int> GetPropertyForControl(object control)
+        public Tuple<MemberInfo, int> GetPropertyForControl(object control)
         {
             // NB: These are intentionally arranged in priority order from most
             // specific to least specific.
             var items = new[] {
 #if !WINRT
-                new { Type = typeof(RichTextBox), Property = "Document" },
+                typeof(RichTextBox).GetTypeInfo().GetDeclaredProperty("Document"),
 #endif
-                new { Type = typeof(Slider), Property = "Value" },
+                typeof(Slider).GetRuntimeProperty("Value"),
 #if !SILVERLIGHT && !WINRT
-                new { Type = typeof(Expander), Property = "IsExpanded" },
+                typeof(Expander).GetTypeInfo().GetDeclaredProperty("IsExpanded"),
 #endif 
-                new { Type = typeof(ToggleButton), Property = "IsChecked" },
-                new { Type = typeof(TextBox), Property = "Text" },
-                new { Type = typeof(TextBlock), Property = "Text" },
-                new { Type = typeof(ProgressBar), Property = "Value" },
-                new { Type = typeof(ItemsControl), Property = "ItemsSource" },
-                new { Type = typeof(Image), Property = "Source" },
-#if !SILVERLIGHT && !WINRT
-                new { Type = typeof(FrameworkContentElement), Property = "Content" },
-#endif
-                new { Type = typeof(FrameworkElement), Property = "Visibility" },
+                typeof(ToggleButton).GetTypeInfo().GetDeclaredProperty("IsChecked"),
+                typeof(TextBox).GetTypeInfo().GetDeclaredProperty("Text"),
+                typeof(TextBlock).GetTypeInfo().GetDeclaredProperty("Text"),
+                typeof(ProgressBar).GetRuntimeProperty("Value"),
+                typeof(ItemsControl).GetTypeInfo().GetDeclaredProperty("ItemsSource"),
+                typeof(Image).GetTypeInfo().GetDeclaredProperty("Source"),
+                typeof(ContentControl).GetRuntimeProperty("Content"),
+                typeof(FrameworkElement).GetRuntimeProperty("Visibility"),
             };
 
             var type = control.GetType();
-            var kvp = items.FirstOrDefault(x => x.Type.GetTypeInfo().IsAssignableFrom(type.GetTypeInfo()));
+            var kvp = items.FirstOrDefault(x => x.DeclaringType.GetTypeInfo().IsAssignableFrom(type.GetTypeInfo()));
 
-            return kvp != null ? Tuple.Create(kvp.Property, 5) : null;
+            return kvp != null ? Tuple.Create<MemberInfo,int>(kvp, 5) : null;
         }
     }
 }

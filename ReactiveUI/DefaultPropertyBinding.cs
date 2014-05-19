@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using Splat;
 
@@ -13,7 +14,7 @@ namespace ReactiveUI
             RxApp.EnsureInitialized();
         }
 
-        public static string GetPropertyForControl(object control)
+        public static MemberInfo GetPropertyForControl(object control)
         {
             return Locator.Current.GetServices<IDefaultPropertyBindingProvider>()
                 .Select(x => x.GetPropertyForControl(control))

@@ -98,7 +98,7 @@ namespace ReactiveUI
         /// </summary>
         public static IObservable<TRet> WhenAnyDynamic<TSender, TRet>(this TSender This, 
             <# for(int i=1; i <= length; i++) { #>
-                string[] property<#=i#>, 
+                Expression property<#=i#>, 
             <# } #>
                 Func<<#= dynamicSelectorTypeParams #>, TRet> selector)
         {

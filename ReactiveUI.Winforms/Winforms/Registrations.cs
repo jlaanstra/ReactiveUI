@@ -27,7 +27,7 @@ namespace ReactiveUI.Winforms
           
             registerFunction(() => new WinformsDefaultPropertyBinding(), typeof(IDefaultPropertyBindingProvider));
             registerFunction(() => new CreatesWinformsCommandBinding(), typeof(ICreatesCommandBinding));
-            registerFunction(() => new WinformsCreatesObservableForProperty(), typeof(ICreatesObservableForProperty));
+            registerFunction(() => new WinformsCreatesObservableForProperty(), typeof(ICreatesObservableForExpression));
 
             if (!ModeDetector.InUnitTestRunner()) {
                 WindowsFormsSynchronizationContext.AutoInstall = true;

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 using System.Windows;
 using ReactiveUI.Xaml;
@@ -19,14 +20,24 @@ namespace ReactiveUI.Tests
         }
     }
 
-    public class DerivedDepObjFixture : DepObjFixture
+    public class DerivedDepObjFixture : DepObjFixture, IViewFor
     {
         public string AnotherTestString {
             get { return (string)GetValue(AnotherTestStringProperty); }
             set { SetValue(AnotherTestStringProperty, value); }
         }
+
         public static readonly DependencyProperty AnotherTestStringProperty =
             DependencyProperty.Register("AnotherTestString", typeof(string), typeof(DerivedDepObjFixture), new PropertyMetadata(null));
+
+        public object ViewModel
+        {
+            get { return this.GetValue(ViewModelProperty); }
+            set { this.SetValue(ViewModelProperty, value); }
+        }
+
+        public static readonly DependencyProperty ViewModelProperty = 
+            DependencyProperty.Register("ViewModel", typeof(object), typeof(DerivedDepObjFixture), new PropertyMetadata(null));
     }
 
     public class DependencyObjectObservableForPropertyTest
@@ -35,13 +46,14 @@ namespace ReactiveUI.Tests
         public void DependencyObjectObservableForPropertySmokeTest()
         {
             var fixture = new DepObjFixture();
-            var binder = new DependencyObjectObservableForProperty();
-            Assert.NotEqual(0, binder.GetAffinityForObject(typeof (DepObjFixture), "TestString"));
-            Assert.Equal(0, binder.GetAffinityForObject(typeof (DepObjFixture), "DoesntExist"));
+            var binder = new DependencyObjectObservableForExpression();
 
+            Expression<Func<DepObjFixture, string>> expr = fi => fi.TestString;
+            Assert.NotEqual(0, binder.GetAffinityForMember(fixture.GetType(), expr.Body.GetMemberInfo()));
+            
             var results = new List<IObservedChange<object, object>>();
-            var disp1 = binder.GetNotificationForProperty(fixture, "TestString").Subscribe(results.Add);
-            var disp2 = binder.GetNotificationForProperty(fixture, "TestString").Subscribe(results.Add);
+            var disp1 = binder.GetNotificationForExpression(fixture, expr.Body).Subscribe(results.Add);
+            var disp2 = binder.GetNotificationForExpression(fixture, expr.Body).Subscribe(results.Add);
 
             fixture.TestString = "Foo";
             fixture.TestString = "Bar";
@@ -53,16 +65,38 @@ namespace ReactiveUI.Tests
         }
 
         [Fact]
+        public void DependencyObjectObservableForInterfacePropertySmokeTest()
+        {
+            var fixture = new DerivedDepObjFixture();
+            var binder = new DependencyObjectObservableForExpression();
+
+            Expression<Func<IViewFor, object>> expr = fi => fi.ViewModel;
+            Assert.NotEqual(0, binder.GetAffinityForMember(fixture.GetType(), expr.Body.GetMemberInfo()));
+
+            var results = new List<IObservedChange<object, object>>();
+            var disp1 = binder.GetNotificationForExpression(fixture, expr.Body).Subscribe(results.Add);
+            var disp2 = binder.GetNotificationForExpression(fixture, expr.Body).Subscribe(results.Add);
+
+            ((IViewFor)fixture).ViewModel = new object();
+
+            Assert.Equal(2, results.Count);
+
+            disp1.Dispose();
+            disp2.Dispose();
+        }
+
+        [Fact]
         public void DerivedDependencyObjectObservableForPropertySmokeTest()
         {
             var fixture = new DerivedDepObjFixture();
-            var binder = new DependencyObjectObservableForProperty();
-            Assert.NotEqual(0, binder.GetAffinityForObject(typeof (DerivedDepObjFixture), "TestString"));
-            Assert.Equal(0, binder.GetAffinityForObject(typeof (DerivedDepObjFixture), "DoesntExist"));
+            var binder = new DependencyObjectObservableForExpression();
+
+            Expression<Func<DerivedDepObjFixture, string>> expr = fi => fi.TestString;
+            Assert.NotEqual(0, binder.GetAffinityForMember(fixture.GetType(), expr.Body.GetMemberInfo()));
 
             var results = new List<IObservedChange<object, object>>();
-            var disp1 = binder.GetNotificationForProperty(fixture, "TestString").Subscribe(results.Add);
-            var disp2 = binder.GetNotificationForProperty(fixture, "TestString").Subscribe(results.Add);
+            var disp1 = binder.GetNotificationForExpression(fixture, expr.Body).Subscribe(results.Add);
+            var disp2 = binder.GetNotificationForExpression(fixture, expr.Body).Subscribe(results.Add);
 
             fixture.TestString = "Foo";
             fixture.TestString = "Bar";

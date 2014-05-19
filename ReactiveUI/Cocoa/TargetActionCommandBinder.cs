@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Reflection;
 using System.Windows.Input;
 using ReactiveUI;
 using System.Reactive.Disposables;
@@ -60,17 +61,17 @@ namespace ReactiveUI.Cocoa
             });
 
             var sel = new Selector("theAction:");
-            Reflection.GetValueSetterOrThrow(target.GetType(), "Action")(target, sel);
+            Reflection.GetValueSetterOrThrow(target.GetType().GetRuntimeProperty("Action"))(target, sel, null);
 
-            var targetSetter = Reflection.GetValueSetterOrThrow(target.GetType(), "Target");
-            targetSetter(target, ctlDelegate);
-            var actionDisp = Disposable.Create(() => targetSetter(target, null));
+            var targetSetter = Reflection.GetValueSetterOrThrow(target.GetType().GetRuntimeProperty("Target"));
+            targetSetter(target, ctlDelegate, null);
+            var actionDisp = Disposable.Create(() => targetSetter(target, null, null));
 
-            var enabledSetter = Reflection.GetValueSetterForProperty(target.GetType(), "Enabled");
+            var enabledSetter = Reflection.GetValueSetterForProperty(target.GetType().GetRuntimeProperty("Enabled"));
             if(enabledSetter == null) return actionDisp;
 
             // initial enabled state
-            enabledSetter(target, command.CanExecute(latestParam));
+            enabledSetter(target, command.CanExecute(latestParam), null);
 
             var compDisp = new CompositeDisposable(
                 actionDisp,
@@ -78,7 +79,7 @@ namespace ReactiveUI.Cocoa
                 Observable.FromEventPattern<EventHandler, EventArgs>(x => command.CanExecuteChanged += x, x => command.CanExecuteChanged -= x)
                     .Select(_ => command.CanExecute(latestParam))
                     .Subscribe(x => {
-                        enabledSetter(target, x);
+                        enabledSetter(target, x, null);
                     }));
 
             return compDisp;

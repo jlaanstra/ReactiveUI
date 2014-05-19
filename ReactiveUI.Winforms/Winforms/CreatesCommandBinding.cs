@@ -74,9 +74,8 @@ namespace ReactiveUI.Winforms
                 }
             }));
 
-            var enabledSetter = Reflection.GetValueSetterForProperty(target.GetType(), "Enabled");
-
-            if (enabledSetter != null) {
+            var enabledProperty = target.GetType().GetRuntimeProperty("Enabled");
+            if (enabledProperty != null) {
                 object latestParam = null;
                 commandParameter.Subscribe(x => latestParam = x);
 
@@ -84,7 +83,7 @@ namespace ReactiveUI.Winforms
                     .Select(_ => command.CanExecute(latestParam))
                     .StartWith(command.CanExecute(latestParam))
                     .Subscribe(x => {
-                        enabledSetter(target, x);
+                        Reflection.GetValueSetterForProperty(enabledProperty)(target, x, null);
                     }));
             }
 

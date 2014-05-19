@@ -185,11 +185,10 @@ namespace ReactiveUI.Tests
         {
             var vm = new CommandBindViewModel();
             var view = new CommandBindView() {ViewModel = vm};
-            var fixture = new CommandBinderImplementation();
 
             Assert.Null(view.Command1.Command);
 
-            var disp = fixture.BindCommand(vm, view, x => x.Command1);
+            var disp = view.BindCommand(vm, x => x.Command1, null);
             Assert.Equal(vm.Command1, view.Command1.Command);
 
             var newCmd = ReactiveCommand.Create();

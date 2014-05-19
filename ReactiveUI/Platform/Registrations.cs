@@ -42,7 +42,7 @@ namespace ReactiveUI
 
 #if !MONO
             registerFunction(() => new ActivationForViewFetcher(), typeof(IActivationForViewFetcher));
-            registerFunction(() => new DependencyObjectObservableForProperty(), typeof(ICreatesObservableForProperty));
+            registerFunction(() => new DependencyObjectObservableForExpression(), typeof(ICreatesObservableForExpression));
             registerFunction(() => new XamlDefaultPropertyBinding(), typeof(IDefaultPropertyBindingProvider));
             registerFunction(() => new CreatesCommandBindingViaCommandParameter(), typeof(ICreatesCommandBinding));
             registerFunction(() => new CreatesCommandBindingViaEvent(), typeof(ICreatesCommandBinding));
@@ -52,18 +52,18 @@ namespace ReactiveUI
 
 #if ANDROID
             registerFunction(() => new AndroidDefaultPropertyBinding(), typeof(IDefaultPropertyBindingProvider));
-            registerFunction(() => new AndroidObservableForWidgets(), typeof(ICreatesObservableForProperty));
+            registerFunction(() => new AndroidObservableForWidgets(), typeof(ICreatesObservableForExpression));
             registerFunction(() => AndroidCommandBinders.Instance.Value, typeof(ICreatesCommandBinding));
 #endif
 
 #if UIKIT
-            registerFunction(() => UIKitObservableForProperty.Instance.Value, typeof(ICreatesObservableForProperty));
+            registerFunction(() => UIKitObservableForExpression.Instance.Value, typeof(ICreatesObservableForExpression));
             registerFunction(() => UIKitCommandBinders.Instance.Value, typeof(ICreatesCommandBinding));
             registerFunction(() => DateTimeNSDateConverter.Instance.Value, typeof(IBindingTypeConverter));
 #endif
 
 #if COCOA
-            registerFunction(() => new KVOObservableForProperty(), typeof(ICreatesObservableForProperty));
+            registerFunction(() => new KVOObservableForExpression(), typeof(ICreatesObservableForExpression));
             registerFunction(() => new CocoaDefaultPropertyBinding(), typeof(IDefaultPropertyBindingProvider));
 #endif
 

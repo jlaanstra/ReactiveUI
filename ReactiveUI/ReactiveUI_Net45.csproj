@@ -131,7 +131,11 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ExpressionMixins.cs" />
+    <Compile Include="ExpressionRewriter.cs" />
+    <Compile Include="ObservedChangeMixin.cs" />
     <Compile Include="Platform\ComponentModelTypeConverter.cs" />
+    <Compile Include="ReflectionMixins.cs" />
     <Compile Include="Xaml\WpfDependencyObjectObservableForProperty.cs" />
     <Compile Include="Xaml\ActivationForViewFetcher.cs" />
     <Compile Include="Xaml\PlatformOperations.cs" />
@@ -164,7 +168,6 @@
     <Compile Include="MessageBus.cs" />
     <Compile Include="NullDefaultPropertyBindingProvider.cs" />
     <Compile Include="ObservableAsPropertyHelper.cs" />
-    <Compile Include="ObservedChangedMixin.cs" />
     <Compile Include="OrderedComparer.cs" />
     <Compile Include="POCOObservableForProperty.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

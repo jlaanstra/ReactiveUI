@@ -1,5 +1,6 @@
 using System;
 using System.Reactive.Disposables;
+using System.Reflection;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Linq;
@@ -97,18 +98,18 @@ namespace ReactiveUI.Android
                     command.Execute(latestParam);
             });
 
-            var enabledSetter = Reflection.GetValueSetterForProperty(target.GetType(), enablePropertyName);
+            var enabledSetter = Reflection.GetValueSetterForProperty(target.GetType().GetRuntimeProperty(enablePropertyName));
             if(enabledSetter == null) return actionDisp;
 
             // initial enabled state
-            enabledSetter(target, command.CanExecute(latestParam));
+            enabledSetter(target, command.CanExecute(latestParam), null);
 
             var compDisp = new CompositeDisposable(
                 actionDisp,
                 commandParameter.Subscribe(x => latestParam = x),
                 Observable.FromEventPattern<EventHandler, EventArgs>(x => command.CanExecuteChanged += x, x => command.CanExecuteChanged -= x)
                     .Select(_ => command.CanExecute(latestParam))
-                    .Subscribe(x => enabledSetter(target, x)));
+                    .Subscribe(x => enabledSetter(target, x, null)));
 
             return compDisp;
         }
@@ -135,18 +136,18 @@ namespace ReactiveUI.Android
                 actionDisp = Disposable.Create(() => ctl.RemoveTarget(eh, UIControlEvent.TouchUpInside));
             } 
 
-            var enabledSetter = Reflection.GetValueSetterForProperty(target.GetType(), enablePropertyName);
+            var enabledSetter = Reflection.GetValueSetterForProperty(target.GetType().GetRuntimeProperty(enablePropertyName));
             if (enabledSetter == null) return actionDisp;
 
             // Initial enabled state
-            enabledSetter(target, command.CanExecute(latestParam));
+            enabledSetter(target, command.CanExecute(latestParam), null);
 
             var compDisp = new CompositeDisposable(
                 actionDisp,
                 commandParameter.Subscribe(x => latestParam = x),
                 Observable.FromEventPattern<EventHandler, EventArgs>(x => command.CanExecuteChanged += x, x => command.CanExecuteChanged -= x)
                     .Select(_ => command.CanExecute(latestParam))
-                    .Subscribe(x => enabledSetter(target, x)));
+                    .Subscribe(x => enabledSetter(target, x, null)));
 
             return compDisp;
         }

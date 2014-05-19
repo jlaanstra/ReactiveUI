@@ -632,21 +632,22 @@ namespace ReactiveUI
             where TView : IViewFor
         {
             var signalInitialUpdate = new Subject<bool>();
-            var vmPropChain = Reflection.ExpressionToPropertyNames(vmProperty);
-            string[] viewPropChain;
+
+            var vmExpression = Reflection.RewriteExpression(vmProperty.Body);
+            var viewExpression = default(Expression);
 
             if (viewProperty == null) {
                 // NB: In this case, TVProp is possibly wrong due to type 
                 // conversion. Figure out if this is the case, then re-call Bind
                 // with the right TVProp
-                viewPropChain = Reflection.getDefaultViewPropChain(view, vmPropChain);
-                var tvProp = Reflection.GetTypesForPropChain(typeof (TView), viewPropChain).Last();
+                viewExpression = Reflection.getViewExpressionWithProperty(view, vmExpression);
+                var tvProp = viewExpression.Type;
                 if (tvProp != typeof (TVProp)) {
                     var mi = this.GetType().GetTypeInfo().GetDeclaredMethod("Bind").MakeGenericMethod(typeof (TViewModel), typeof (TView), typeof (TVMProp), tvProp, typeof (TDontCare));
                     return (IReactiveBinding<TView, TViewModel, Tuple<object, bool>>)mi.Invoke(this, new[] { viewModel, view, vmProperty, null, signalViewUpdate, conversionHint, null, null });
                 }
             } else {
-                viewPropChain = Reflection.ExpressionToPropertyNames(viewProperty);
+                viewExpression = Reflection.RewriteExpression(viewProperty.Body);
             }
 
             var vmToViewConverter = vmToViewConverterOverride ?? getConverterForTypes(typeof (TVMProp), typeof (TVProp));
@@ -658,21 +659,21 @@ namespace ReactiveUI
             }
 
             var somethingChanged = Observable.Merge(
-                Reflection.ViewModelWhenAnyValueDynamic(viewModel, view, vmPropChain).Select(_ => true),
+                Reflection.ViewModelWhenAnyValue(viewModel, view, vmProperty).Select(_ => true),
                 signalInitialUpdate.Select(_ => true),
                 signalViewUpdate != null ? 
                     signalViewUpdate.Select(_ => false) : 
-                    view.WhenAnyDynamic(viewPropChain, x => (TVProp) x.Value).Select(_ => false));
+                    view.WhenAnyDynamic(viewExpression, x => (TVProp) x.Value).Select(_ => false));
 
-            var vmString = String.Format("{0}.{1}", typeof (TViewModel).Name, String.Join(".", vmPropChain));
-            var vString = String.Format("{0}.{1}", typeof (TView).Name, String.Join(".", viewPropChain));
-            var vmChangedString = String.Format("Setting {0} => {1} ", vmString, vString);
-            var viewChangedString = String.Format("Setting {0} => {1} ", vString, vmString);
+            //var vmString = String.Format("{0}.{1}", typeof (TViewModel).Name, string.Join(".", vmPropChain));
+            //var vString = String.Format("{0}.{1}", typeof (TView).Name, string.Join(".", viewPropChain));
+            //var vmChangedString = String.Format("Setting {0} => {1} ", vmString, vString);
+            //var viewChangedString = String.Format("Setting {0} => {1} ", vString, vmString);
 
             var changeWithValues = somethingChanged.Select(isVm => {
                 TVMProp vmValue; TVProp vValue;
-                if (!Reflection.TryGetValueForPropertyChain(out vmValue, view.ViewModel, vmPropChain) ||
-                    !Reflection.TryGetValueForPropertyChain(out vValue, view, viewPropChain)) {
+                if (!Reflection.TryGetValueForExpressionChain(view.ViewModel, vmExpression, out vmValue) ||
+                    !Reflection.TryGetValueForExpressionChain(view, viewExpression, out vValue)) {
                     return null;
                 }
 
@@ -686,7 +687,7 @@ namespace ReactiveUI
                     var changed = EqualityComparer<TVProp>.Default.Equals(vValue, vmAsView) != true;
                     if (!changed) return null;
 
-                    this.Log().Info(vmChangedString + (vmAsView != null ? vmAsView.ToString() : "(null)"));
+                    //this.Log().Info(vmChangedString + (vmAsView != null ? vmAsView.ToString() : "(null)"));
                     return Tuple.Create((object)vmAsView, isVm);
                 } else {
                     object tmp;
@@ -698,21 +699,21 @@ namespace ReactiveUI
                     var changed = EqualityComparer<TVMProp>.Default.Equals(vmValue, vAsViewModel) != true;
                     if (!changed) return null;
 
-                    this.Log().Info(viewChangedString + (vAsViewModel != null ? vAsViewModel.ToString() : "(null)"));
+                    //this.Log().Info(viewChangedString + (vAsViewModel != null ? vAsViewModel.ToString() : "(null)"));
                     return Tuple.Create((object)vAsViewModel, isVm);
                 }
             });
 
-            var ret = evalBindingHooks(viewModel, view, vmPropChain, viewPropChain, BindingDirection.TwoWay);
+            var ret = evalBindingHooks(viewModel, view, vmExpression, viewExpression, BindingDirection.TwoWay);
             if (!ret) return null;
 
             IObservable<Tuple<object, bool>> changes = changeWithValues.Where(tuple => tuple != null).Publish().RefCount();
 
             IDisposable disp = changes.Subscribe(isVmWithLatestValue => {
                 if (isVmWithLatestValue.Item2) {
-                    Reflection.SetValueToPropertyChain(view, viewPropChain, isVmWithLatestValue.Item1, false);
+                    Reflection.TrySetValueToExpressionChain(view, viewExpression, isVmWithLatestValue.Item1, false);
                 } else {
-                    Reflection.SetValueToPropertyChain(view.ViewModel, vmPropChain, isVmWithLatestValue.Item1, false);
+                    Reflection.TrySetValueToExpressionChain(view.ViewModel, vmExpression, isVmWithLatestValue.Item1, false);
                 }
             });
 
@@ -720,7 +721,7 @@ namespace ReactiveUI
             // want the ViewModel to win at first.
             signalInitialUpdate.OnNext(true);
 
-            return new ReactiveBinding<TView, TViewModel, Tuple<object, bool>>(view, viewModel, viewPropChain, vmPropChain, 
+            return new ReactiveBinding<TView, TViewModel, Tuple<object, bool>>(view, viewModel, viewExpression, vmExpression, 
                 changes, BindingDirection.TwoWay, disp);
         }
 
@@ -777,63 +778,51 @@ namespace ReactiveUI
             where TViewModel : class
             where TView : IViewFor
         {
-            var vmPropChain = Reflection.ExpressionToPropertyNames(vmProperty);
-            var viewPropChain = default(string[]);
+            var vmExpression = Reflection.RewriteExpression(vmProperty.Body);
+            var viewExpression = default(Expression);
             var source = default(IObservable<TVProp>);
             var fallbackWrapper = default(Func<TVProp>);
 
             if (viewProperty == null) {
-                viewPropChain = Reflection.getDefaultViewPropChain(view, Reflection.ExpressionToPropertyNames(vmProperty));
-
-                var viewType = Reflection.GetTypesForPropChain(typeof (TView), viewPropChain).Last();
-                var converter = vmToViewConverterOverride ?? getConverterForTypes(typeof (TVMProp), viewType);
-
-                if (converter == null) {
-                    throw new ArgumentException(String.Format("Can't convert {0} to {1}. To fix this, register a IBindingTypeConverter", typeof (TVMProp), viewType));
+                viewExpression = Reflection.getViewExpressionWithProperty(view, vmExpression);
+                var tvProp = viewExpression.Type;
+                if (tvProp != typeof(TVProp))
+                {
+                    var mi = this.GetType().GetTypeInfo().GetDeclaredMethod("OneWayBind").MakeGenericMethod(typeof(TViewModel), typeof(TView), typeof(TVMProp), tvProp);
+                    return (IReactiveBinding<TView, TViewModel, TVProp>)mi.Invoke(this, new[] { viewModel, view, vmProperty, null, fallbackValue, conversionHint, null});
                 }
-
-                var ret = evalBindingHooks(viewModel, view, vmPropChain, viewPropChain, BindingDirection.OneWay);
-                if (!ret) return null;
-
-                source = Reflection.ViewModelWhenAnyValueDynamic(viewModel, view, vmPropChain)
-                    .SelectMany(x => {
-                        object tmp;
-                        if (!converter.TryConvert(x, viewType, conversionHint, out tmp)) return Observable.Empty<TVProp>();
-                        return Observable.Return((TVProp)tmp);
-                    });
-
-                fallbackWrapper = () => {
-                    object tmp;
-                    return converter.TryConvert(fallbackValue(), typeof(TVProp), conversionHint, out tmp) ? (TVProp)tmp : default(TVProp);
-                };
             } else {
-                var converter = vmToViewConverterOverride ?? getConverterForTypes(typeof (TVMProp), typeof (TVProp));
-
-                if (converter == null) {
-                    throw new ArgumentException(String.Format("Can't convert {0} to {1}. To fix this, register a IBindingTypeConverter", typeof (TVMProp), typeof(TVProp)));
-                }
-
-                viewPropChain = Reflection.ExpressionToPropertyNames(viewProperty);
-
-                var ret = evalBindingHooks(viewModel, view, vmPropChain, viewPropChain, BindingDirection.OneWay);
-                if (!ret) return null;
-
-                source = Reflection.ViewModelWhenAnyValueDynamic(viewModel, view, vmPropChain)
-                    .SelectMany(x => {
-                        object tmp;
-                        if (!converter.TryConvert(x, typeof(TVProp), conversionHint, out tmp)) return Observable.Empty<TVProp>();
-                        return Observable.Return(tmp == null ? default(TVProp) : (TVProp)tmp);
-                    });
-
-                fallbackWrapper = () => {
-                    object tmp;
-                    return converter.TryConvert(fallbackValue(), typeof(TVProp), conversionHint, out tmp) ?  (TVProp)tmp : default(TVProp);
-                };
+                viewExpression = Reflection.RewriteExpression(viewProperty.Body);
             }
 
-            IDisposable disp = bindToDirect(source, view, viewProperty, fallbackWrapper);
+            var ret = evalBindingHooks(viewModel, view, vmExpression, viewExpression, BindingDirection.OneWay);
+            if (!ret) return null;
 
-            return new ReactiveBinding<TView, TViewModel, TVProp>(view, viewModel, viewPropChain, vmPropChain, source, BindingDirection.OneWay, disp);
+            var viewType = viewExpression.Type;
+
+            var converter = vmToViewConverterOverride ?? getConverterForTypes(typeof(TVMProp), viewType);
+            if (converter == null)
+            {
+                throw new ArgumentException(String.Format("Can't convert {0} to {1}. To fix this, register a IBindingTypeConverter", typeof(TVMProp), viewType));
+            }
+
+            source = Reflection.ViewModelWhenAnyValue(viewModel, view, vmExpression)
+                .SelectMany(x =>
+                {
+                    object tmp;
+                    if (!converter.TryConvert(x, viewType, conversionHint, out tmp)) return Observable.Empty<TVProp>();
+                    return Observable.Return(tmp == null ? default(TVProp) : (TVProp)tmp);
+                });
+
+            fallbackWrapper = () =>
+            {
+                object tmp;
+                return converter.TryConvert(fallbackValue(), typeof(TVProp), conversionHint, out tmp) ? (TVProp)tmp : default(TVProp);
+            };
+
+            IDisposable disp = bindToDirect(source, view, viewExpression, fallbackWrapper);
+
+            return new ReactiveBinding<TView, TViewModel, TVProp>(view, viewModel, viewExpression, vmExpression, source, BindingDirection.OneWay, disp);
         }
 
         /// <summary>
@@ -884,29 +873,23 @@ namespace ReactiveUI
             where TViewModel : class
             where TView : IViewFor
         {
-            var vmPropChain = Reflection.ExpressionToPropertyNames(vmProperty);
-            var viewPropChain = default(string[]);
-            var vmString = String.Format("{0}.{1}", typeof (TViewModel).Name, String.Join(".", vmPropChain));
+            var vmExpression = Reflection.RewriteExpression(vmProperty.Body);
+            var viewExpression = default(Expression);
             var source = default(IObservable<TOut>);
 
             if (viewProperty == null) {
-                viewPropChain = Reflection.getDefaultViewPropChain(view, Reflection.ExpressionToPropertyNames(vmProperty));
-
-                var ret = evalBindingHooks(viewModel, view, vmPropChain, viewPropChain, BindingDirection.OneWay);
-                if (!ret) return null;
-
-                source = Reflection.ViewModelWhenAnyValueDynamic(viewModel, view, vmPropChain).Select(x => (TProp)x).Select(selector);
+                viewExpression = Reflection.getViewExpressionWithProperty(view, vmExpression);
             } else {
-                viewPropChain = Reflection.ExpressionToPropertyNames(viewProperty);
-                var ret = evalBindingHooks(viewModel, view, vmPropChain, viewPropChain, BindingDirection.OneWay);
-                if (!ret) return null;
-
-                source = Reflection.ViewModelWhenAnyValueDynamic(viewModel, view, vmPropChain).Select(x => (TProp)x).Select(selector);
+                viewExpression = Reflection.RewriteExpression(viewProperty.Body);                                
             }
+            var ret = evalBindingHooks(viewModel, view, vmExpression, viewExpression, BindingDirection.OneWay);
+            if (!ret) return null;
 
-            IDisposable disp = bindToDirect(source, view, viewProperty, fallbackValue);
+            source = Reflection.ViewModelWhenAnyValue(viewModel, view, vmExpression).Select(x => (TProp)x).Select(selector);
 
-            return new ReactiveBinding<TView, TViewModel, TOut>(view, viewModel, viewPropChain, vmPropChain, source, BindingDirection.OneWay, disp);
+            IDisposable disp = bindToDirect(source, view, viewExpression, fallbackValue);
+
+            return new ReactiveBinding<TView, TViewModel, TOut>(view, viewModel, viewExpression, vmExpression, source, BindingDirection.OneWay, disp);
         }
 
         /// <summary>
@@ -934,8 +917,9 @@ namespace ReactiveUI
             object conversionHint = null,
             IBindingTypeConverter vmToViewConverterOverride = null)
         {
-            var viewPropChain = Reflection.ExpressionToPropertyNames(property);
-            var ret = evalBindingHooks(This, target, null, viewPropChain, BindingDirection.OneWay);
+            var viewExpression = Reflection.RewriteExpression(property.Body);
+
+            var ret = evalBindingHooks(This, target, null, viewExpression, BindingDirection.OneWay);
             if (!ret) return Disposable.Empty;
                 
             var converter = vmToViewConverterOverride ?? getConverterForTypes(typeof (TValue), typeof(TTValue));
@@ -950,7 +934,7 @@ namespace ReactiveUI
                 return Observable.Return(tmp == null ? default(TTValue) : (TTValue)tmp);
             });
 
-            return bindToDirect(source, target, property, fallbackValue == null ? default(Func<TTValue>) : new Func<TTValue>(() => {
+            return bindToDirect(source, target, viewExpression, fallbackValue == null ? default(Func<TTValue>) : new Func<TTValue>(() => {
                 object tmp;
                 if (!converter.TryConvert(fallbackValue(), typeof(TTValue), conversionHint, out tmp)) return default(TTValue);
                 return tmp == null ? default(TTValue) : (TTValue)tmp;
@@ -960,37 +944,39 @@ namespace ReactiveUI
         IDisposable bindToDirect<TTarget, TValue>(
             IObservable<TValue> This,
             TTarget target,
-            Expression<Func<TTarget, TValue>> property,
+            Expression viewExpression,
             Func<TValue> fallbackValue = null)
         {
-            var types = new[] { typeof(TTarget) }.Concat(Reflection.ExpressionToPropertyTypes(property)).ToArray();
-            var names = Reflection.ExpressionToPropertyNames(property);
-
-            var setter = Reflection.GetValueSetterOrThrow(types.Reverse().Skip(1).First(), names.Last());
-            if (names.Length == 1) {
+            var setter = Reflection.GetValueSetterOrThrow(viewExpression.GetMemberInfo());
+            if (viewExpression.GetParent() is ParameterExpression) {
                 return This.Subscribe(
-                    x => setter(target, x),
+                    x => setter(target, x, null),
                     ex => {
                         this.Log().ErrorException("Binding recieved an Exception!", ex);
-                        if (fallbackValue != null) setter(target, fallbackValue());
+                        if (fallbackValue != null) setter(target, fallbackValue(), null);
                     });
             }
 
             var bindInfo = Observable.CombineLatest(
-                This, target.WhenAnyDynamic(names.SkipLast(1).ToArray(), x => x.Value),
+                This, target.WhenAnyDynamic(viewExpression.GetParent(), x => x.Value),
                 (val, host) => new { val, host });
 
             return bindInfo
                 .Where(x => x.host != null)
                 .Subscribe(
-                    x => setter(x.host, x.val),
+                    x => setter(x.host, x.val, null),
                     ex => {
                         this.Log().ErrorException("Binding recieved an Exception!", ex);
-                        if (fallbackValue != null) setter(target, fallbackValue());
+                        if (fallbackValue != null) setter(target, fallbackValue(), null);
                     });
         }
 
-        bool evalBindingHooks<TViewModel, TView>(TViewModel viewModel, TView view, string[] vmPropChain, string[] viewPropChain, BindingDirection direction)
+        bool evalBindingHooks<TViewModel, TView>(
+            TViewModel viewModel, 
+            TView view,
+            Expression vmPropChain,
+            Expression viewPropChain, 
+            BindingDirection direction)
             where TViewModel : class
         {
             var hooks = Locator.Current.GetServices<IPropertyBindingHook>();
@@ -999,7 +985,7 @@ namespace ReactiveUI
             if (vmPropChain != null) {
                 vmFetcher = () => {
                     IObservedChange<object, object>[] fetchedValues;
-                    Reflection.TryGetAllValuesForPropertyChain(out fetchedValues, viewModel, vmPropChain);
+                    Reflection.TryGetAllValuesForExpressionChain(viewModel, vmPropChain, out fetchedValues);
                     return fetchedValues;
                 };
             } else {
@@ -1012,7 +998,7 @@ namespace ReactiveUI
             
             var vFetcher = new Func<IObservedChange<object, object>[]>(() => {
                 IObservedChange<object, object>[] fetchedValues;
-                Reflection.TryGetAllValuesForPropertyChain(out fetchedValues, view, viewPropChain);
+                Reflection.TryGetAllValuesForExpressionChain(view, viewPropChain, out fetchedValues);
                 return fetchedValues;
             });
 
@@ -1020,8 +1006,8 @@ namespace ReactiveUI
                 acc && x.ExecuteHook(viewModel, view, vmFetcher, vFetcher, direction));
 
             if (!shouldBind) {
-                var vmString = String.Format("{0}.{1}", typeof (TViewModel).Name, String.Join(".", vmPropChain));
-                var vString = String.Format("{0}.{1}", typeof (TView).Name, String.Join(".", viewPropChain));
+                var vmString = string.Format("{0}.{1}", typeof (TViewModel).Name, string.Join(".", vmPropChain));
+                var vString = string.Format("{0}.{1}", typeof (TView).Name, string.Join(".", viewPropChain));
                 this.Log().Warn("Binding hook asked to disable binding {0} => {1}", vmString, vString);
             }
 

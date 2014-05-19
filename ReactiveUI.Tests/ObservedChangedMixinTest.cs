@@ -7,6 +7,7 @@ using Xunit;
 using ReactiveUI.Testing;
 
 using Microsoft.Reactive.Testing;
+using System.Linq.Expressions;
 
 namespace ReactiveUI.Tests
 {
@@ -17,19 +18,13 @@ namespace ReactiveUI.Tests
         {
             var input = new[] {"Foo", "Bar", "Baz"};
             var output = new List<string>();
-            var output2 = new List<string>();
 
             (new TestScheduler()).With(sched => {
                 var fixture = new TestFixture();
-
-                // Two cases: Changed is guaranteed to *not* set ObservedChange.Value
-                fixture.Changed.Subscribe(x => {
-                    output.Add((string) x.GetValue());
-                });
-
+                
                 // ...whereas ObservableForProperty *is* guaranteed to.
                 fixture.ObservableForProperty(x => x.IsOnlyOneWord).Subscribe(x => {
-                    output2.Add(x.GetValue());
+                    output.Add(x.GetValue());
                 });
 
                 foreach (var v in input) { fixture.IsOnlyOneWord = v; }
@@ -37,7 +32,6 @@ namespace ReactiveUI.Tests
                 sched.AdvanceToMs(1000);
 
                 input.AssertAreEqual(output);
-                input.AssertAreEqual(output2);
             });
         }
 
@@ -48,23 +42,11 @@ namespace ReactiveUI.Tests
                 Child = new TestFixture() {IsNotNullString = "Foo"},
             };
 
-            var fixture = new ObservedChange<HostTestFixture, string>(input, "Child.IsNotNullString");
+            Expression<Func<HostTestFixture, string>> expr = tf => tf.Child.IsNotNullString;
+            var fixture = new ObservedChange<HostTestFixture, string>(input, expr.Body);
 
             Assert.Equal("Foo", fixture.GetValue());
-        }
-
-        [Fact]
-        public void SetValuePathSmokeTest()
-        {
-            var output = new HostTestFixture() {
-                Child = new TestFixture() {IsNotNullString = "Foo"},
-            };
-
-            var fixture = new ObservedChange<TestFixture, string>(new TestFixture() { IsOnlyOneWord = "Bar" }, "IsOnlyOneWord");
-
-            fixture.SetValueToProperty(output, x => x.Child.IsNotNullString);
-            Assert.Equal("Bar", output.Child.IsNotNullString);
-        }
+        }        
 
         [Fact]
         public void BindToSmokeTest()

@@ -7,6 +7,8 @@ using System.Threading.Tasks;
 using System.Windows.Input;
 using System.Reactive;
 using Splat;
+using System.Reflection;
+using System.Linq.Expressions;
 
 namespace ReactiveUI
 {
@@ -112,27 +114,32 @@ namespace ReactiveUI
     /// are porting RxUI to a new UI toolkit, or generally want to enable WhenAny
     /// for another type of object that can be observed in a unique way.
     /// </summary>
-    public interface ICreatesObservableForProperty : IEnableLogger
+    public interface ICreatesObservableForExpression : IEnableLogger
     {
         /// <summary>
-        /// Returns a positive integer when this class supports 
-        /// GetNotificationForProperty for this particular Type. If the method
-        /// isn't supported at all, return a non-positive integer. When multiple
-        /// implementations return a positive value, the host will use the one
-        /// which returns the highest value. When in doubt, return '2' or '0'
+        /// Returns a positive integer when this class supports
+        /// GetNotificationForProperty for this particular member on the type specified.
+        /// If the method isn't supported at all, return a non-positive integer.
+        /// When multiple implementations return a positive value, the host will use
+        /// the one which returns the highest value. When in doubt, return '2' or '0'
         /// </summary>
-        /// <param name="type">The type to query for.</param>
-        /// <returns>A positive integer if GNFP is supported, zero or a negative
-        /// value otherwise</returns>
-        int GetAffinityForObject(Type type, string propertyName, bool beforeChanged = false);
+        /// <param name="type">The type we want to observe the member on. 
+        /// We need this because the member can be defined on a subtype.</param>
+        /// <param name="member">The member to query for.</param>
+        /// <param name="beforeChanged">if set to <c>true</c> [before changed].</param>
+        /// <returns>
+        /// A positive integer if GNFE is supported, zero or a negative
+        /// value otherwise
+        /// </returns>
+        int GetAffinityForMember(Type type, MemberInfo member, bool beforeChanged = false);
 
         /// <summary>
         /// Subscribe to notifications on the specified property, given an 
         /// object and a property name.
         /// </summary>
         /// <param name="sender">The object to observe.</param>
-        /// <param name="propertyName">The property on the object to observe. 
-        /// This property will not be a dotted property, only a simple name.
+        /// <param name="expr">The expression on the object to observe. 
+        /// This expression will not have sub-expressions, only a single expression.
         /// </param>
         /// <param name="beforeChanged">If true, signal just before the 
         /// property value actually changes. If false, signal after the 
@@ -140,7 +147,7 @@ namespace ReactiveUI
         /// <returns>An IObservable which is signalled whenever the specified
         /// property on the object changes. If this cannot be done for a 
         /// specified value of beforeChanged, return Observable.Never</returns>
-        IObservable<IObservedChange<object, object>> GetNotificationForProperty(object sender, string propertyName, bool beforeChanged = false);
+        IObservable<IObservedChange<object, object>> GetNotificationForExpression(object sender, Expression expr, bool beforeChanged = false);
     }
 
     /// <summary>
@@ -188,7 +195,7 @@ namespace ReactiveUI
         /// <returns>A tuple of PropertyName and Affinity for that property.
         /// Use the same rules about affinity as others, but return null if
         /// the property can't be determined.</returns>
-        Tuple<string, int> GetPropertyForControl(object control);
+        Tuple<MemberInfo, int> GetPropertyForControl(object control);
     }
 
     /// <summary>

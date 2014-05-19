@@ -81,14 +81,14 @@ namespace ReactiveUI.Android
         /// Represents an Observable that fires *before* a property is about to
         /// be changed.         
         /// </summary>
-        public IObservable<IObservedChange<ReactiveActivity, object>> Changing {
+        public IObservable<IReactivePropertyChangedEventArgs<ReactiveActivity>> Changing {
             get { return this.getChangingObservable(); }
         }
 
         /// <summary>
         /// Represents an Observable that fires *after* a property has changed.
         /// </summary>
-        public IObservable<IObservedChange<ReactiveActivity, object>> Changed {
+        public IObservable<IReactivePropertyChangedEventArgs<ReactiveActivity>> Changed {
             get { return this.getChangedObservable(); }
         }
 

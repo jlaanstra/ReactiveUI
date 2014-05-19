@@ -95,12 +95,13 @@ namespace ReactiveUI.Xaml
             if (hasEventTarget) return 0;
 
             var propsToFind = new[] {
-                new { Name = "Command", TargetType = typeof(ICommand) },
-                new { Name = "CommandParameter", TargetType = typeof(object) },
+                type.GetRuntimeProperty("Command"),
+                type.GetRuntimeProperty("CommandParameter"),
             };
 
-            return propsToFind.All(x => {
-                var pi = Reflection.GetValueFetcherForProperty(type, x.Name);
+            return propsToFind.All(x =>
+            {
+                var pi = Reflection.GetValueFetcherForProperty(x);
                 return pi != null;
             }) ? 5 : 0;
         }

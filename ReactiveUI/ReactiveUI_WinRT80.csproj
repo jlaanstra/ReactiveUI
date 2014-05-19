@@ -38,7 +38,11 @@
     <DocumentationFile>bin\Release\WinRT45\ReactiveUI.xml</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="ExpressionMixins.cs" />
+    <Compile Include="ExpressionRewriter.cs" />
+    <Compile Include="ObservedChangeMixin.cs" />
     <Compile Include="Platform\Registrations.cs" />
+    <Compile Include="ReflectionMixins.cs" />
     <Compile Include="Xaml\ActivationForViewFetcher.cs" />
     <Compile Include="Xaml\AutoDataTemplateBindingHook.cs" />
     <Compile Include="Xaml\BindingTypeConverters.cs" />
@@ -70,7 +74,6 @@
     <Compile Include="MessageBus.cs" />
     <Compile Include="NullDefaultPropertyBindingProvider.cs" />
     <Compile Include="ObservableAsPropertyHelper.cs" />
-    <Compile Include="ObservedChangedMixin.cs" />
     <Compile Include="OrderedComparer.cs" />
     <Compile Include="POCOObservableForProperty.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

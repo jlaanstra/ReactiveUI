@@ -65,7 +65,7 @@ namespace ReactiveUI
         /// initial setup.
         /// </summary>
         public static IObservable<TRet> WhenAnyDynamic<TSender, TRet>(this TSender This, 
-                            string[] property1, 
+                            Expression property1, 
                             Func<IObservedChange<TSender, object>, TRet> selector)
         {
                             return ReactiveNotifyPropertyChangedMixin
@@ -117,8 +117,8 @@ namespace ReactiveUI
         /// initial setup.
         /// </summary>
         public static IObservable<TRet> WhenAnyDynamic<TSender, TRet>(this TSender This, 
-                            string[] property1, 
-                            string[] property2, 
+                            Expression property1, 
+                            Expression property2, 
                             Func<IObservedChange<TSender, object>, IObservedChange<TSender, object>, TRet> selector)
         {
                         return Observable.CombineLatest(
@@ -178,9 +178,9 @@ namespace ReactiveUI
         /// initial setup.
         /// </summary>
         public static IObservable<TRet> WhenAnyDynamic<TSender, TRet>(this TSender This, 
-                            string[] property1, 
-                            string[] property2, 
-                            string[] property3, 
+                            Expression property1, 
+                            Expression property2, 
+                            Expression property3, 
                             Func<IObservedChange<TSender, object>, IObservedChange<TSender, object>, IObservedChange<TSender, object>, TRet> selector)
         {
                         return Observable.CombineLatest(
@@ -245,10 +245,10 @@ namespace ReactiveUI
         /// initial setup.
         /// </summary>
         public static IObservable<TRet> WhenAnyDynamic<TSender, TRet>(this TSender This, 
-                            string[] property1, 
-                            string[] property2, 
-                            string[] property3, 
-                            string[] property4, 
+                            Expression property1, 
+                            Expression property2, 
+                            Expression property3, 
+                            Expression property4, 
                             Func<IObservedChange<TSender, object>, IObservedChange<TSender, object>, IObservedChange<TSender, object>, IObservedChange<TSender, object>, TRet> selector)
         {
                         return Observable.CombineLatest(
@@ -318,11 +318,11 @@ namespace ReactiveUI
         /// initial setup.
         /// </summary>
         public static IObservable<TRet> WhenAnyDynamic<TSender, TRet>(this TSender This, 
-                            string[] property1, 
-                            string[] property2, 
-                            string[] property3, 
-                            string[] property4, 
-                            string[] property5, 
+                            Expression property1, 
+                            Expression property2, 
+                            Expression property3, 
+                            Expression property4, 
+                            Expression property5, 
                             Func<IObservedChange<TSender, object>, IObservedChange<TSender, object>, IObservedChange<TSender, object>, IObservedChange<TSender, object>, IObservedChange<TSender, object>, TRet> selector)
         {
                         return Observable.CombineLatest(
@@ -397,12 +397,12 @@ namespace ReactiveUI
         /// initial setup.
         /// </summary>
         public static IObservable<TRet> WhenAnyDynamic<TSender, TRet>(this TSender This, 
-                            string[] property1, 
-                            string[] property2, 
-                            string[] property3, 
-                            string[] property4, 
-                            string[] property5, 
-                            string[] property6, 
+                            Expression property1, 
+                            Expression property2, 
+                            Expression property3, 
+                            Expression property4, 
+                            Expression property5, 
+                            Expression property6, 
                             Func<IObservedChange<TSender, object>, IObservedChange<TSender, object>, IObservedChange<TSender, object>, IObservedChange<TSender, object>, IObservedChange<TSender, object>, IObservedChange<TSender, object>, TRet> selector)
         {
                         return Observable.CombineLatest(
@@ -482,13 +482,13 @@ namespace ReactiveUI
         /// initial setup.
         /// </summary>
         public static IObservable<TRet> WhenAnyDynamic<TSender, TRet>(this TSender This, 
-                            string[] property1, 
-                            string[] property2, 
-                            string[] property3, 
-                            string[] property4, 
-                            string[] property5, 
-                            string[] property6, 
-                            string[] property7, 
+                            Expression property1, 
+                            Expression property2, 
+                            Expression property3, 
+                            Expression property4, 
+                            Expression property5, 
+                            Expression property6, 
+                            Expression property7, 
                             Func<IObservedChange<TSender, object>, IObservedChange<TSender, object>, IObservedChange<TSender, object>, IObservedChange<TSender, object>, IObservedChange<TSender, object>, IObservedChange<TSender, object>, IObservedChange<TSender, object>, TRet> selector)
         {
                         return Observable.CombineLatest(
@@ -573,14 +573,14 @@ namespace ReactiveUI
         /// initial setup.
         /// </summary>
         public static IObservable<TRet> WhenAnyDynamic<TSender, TRet>(this TSender This, 
-                            string[] property1, 
-                            string[] property2, 
-                            string[] property3, 
-                            string[] property4, 
-                            string[] property5, 
-                            string[] property6, 
-                            string[] property7, 
-                            string[] property8, 
+                            Expression property1, 
+                            Expression property2, 
+                            Expression property3, 
+                            Expression property4, 
+                            Expression property5, 
+                            Expression property6, 
+                            Expression property7, 
+                            Expression property8, 
                             Func<IObservedChange<TSender, object>, IObservedChange<TSender, object>, IObservedChange<TSender, object>, IObservedChange<TSender, object>, IObservedChange<TSender, object>, IObservedChange<TSender, object>, IObservedChange<TSender, object>, IObservedChange<TSender, object>, TRet> selector)
         {
                         return Observable.CombineLatest(
@@ -670,15 +670,15 @@ namespace ReactiveUI
         /// initial setup.
         /// </summary>
         public static IObservable<TRet> WhenAnyDynamic<TSender, TRet>(this TSender This, 
-                            string[] property1, 
-                            string[] property2, 
-                            string[] property3, 
-                            string[] property4, 
-                            string[] property5, 
-                            string[] property6, 
-                            string[] property7, 
-                            string[] property8, 
-                            string[] property9, 
+                            Expression property1, 
+                            Expression property2, 
+                            Expression property3, 
+                            Expression property4, 
+                            Expression property5, 
+                            Expression property6, 
+                            Expression property7, 
+                            Expression property8, 
+                            Expression property9, 
                             Func<IObservedChange<TSender, object>, IObservedChange<TSender, object>, IObservedChange<TSender, object>, IObservedChange<TSender, object>, IObservedChange<TSender, object>, IObservedChange<TSender, object>, IObservedChange<TSender, object>, IObservedChange<TSender, object>, IObservedChange<TSender, object>, TRet> selector)
         {
                         return Observable.CombineLatest(
@@ -773,16 +773,16 @@ namespace ReactiveUI
         /// initial setup.
         /// </summary>
         public static IObservable<TRet> WhenAnyDynamic<TSender, TRet>(this TSender This, 
-                            string[] property1, 
-                            string[] property2, 
-                            string[] property3, 
-                            string[] property4, 
-                            string[] property5, 
-                            string[] property6, 
-                            string[] property7, 
-                            string[] property8, 
-                            string[] property9, 
-                            string[] property10, 
+                            Expression property1, 
+                            Expression property2, 
+                            Expression property3, 
+                            Expression property4, 
+                            Expression property5, 
+                            Expression property6, 
+                            Expression property7, 
+                            Expression property8, 
+                            Expression property9, 
+                            Expression property10, 
                             Func<IObservedChange<TSender, object>, IObservedChange<TSender, object>, IObservedChange<TSender, object>, IObservedChange<TSender, object>, IObservedChange<TSender, object>, IObservedChange<TSender, object>, IObservedChange<TSender, object>, IObservedChange<TSender, object>, IObservedChange<TSender, object>, IObservedChange<TSender, object>, TRet> selector)
         {
                         return Observable.CombineLatest(
@@ -882,17 +882,17 @@ namespace ReactiveUI
         /// initial setup.
         /// </summary>
         public static IObservable<TRet> WhenAnyDynamic<TSender, TRet>(this TSender This, 
-                            string[] property1, 
-                            string[] property2, 
-                            string[] property3, 
-                            string[] property4, 
-                            string[] property5, 
-                            string[] property6, 
-                            string[] property7, 
-                            string[] property8, 
-                            string[] property9, 
-                            string[] property10, 
-                            string[] property11, 
+                            Expression property1, 
+                            Expression property2, 
+                            Expression property3, 
+                            Expression property4, 
+                            Expression property5, 
+                            Expression property6, 
+                            Expression property7, 
+                            Expression property8, 
+                            Expression property9, 
+                            Expression property10, 
+                            Expression property11, 
                             Func<IObservedChange<TSender, object>, IObservedChange<TSender, object>, IObservedChange<TSender, object>, IObservedChange<TSender, object>, IObservedChange<TSender, object>, IObservedChange<TSender, object>, IObservedChange<TSender, object>, IObservedChange<TSender, object>, IObservedChange<TSender, object>, IObservedChange<TSender, object>, IObservedChange<TSender, object>, TRet> selector)
         {
                         return Observable.CombineLatest(
@@ -997,18 +997,18 @@ namespace ReactiveUI
         /// initial setup.
         /// </summary>
         public static IObservable<TRet> WhenAnyDynamic<TSender, TRet>(this TSender This, 
-                            string[] property1, 
-                            string[] property2, 
-                            string[] property3, 
-                            string[] property4, 
-                            string[] property5, 
-                            string[] property6, 
-                            string[] property7, 
-                            string[] property8, 
-                            string[] property9, 
-                            string[] property10, 
-                            string[] property11, 
-                            string[] property12, 
+                            Expression property1, 
+                            Expression property2, 
+                            Expression property3, 
+                            Expression property4, 
+                            Expression property5, 
+                            Expression property6, 
+                            Expression property7, 
+                            Expression property8, 
+                            Expression property9, 
+                            Expression property10, 
+                            Expression property11, 
+                            Expression property12, 
                             Func<IObservedChange<TSender, object>, IObservedChange<TSender, object>, IObservedChange<TSender, object>, IObservedChange<TSender, object>, IObservedChange<TSender, object>, IObservedChange<TSender, object>, IObservedChange<TSender, object>, IObservedChange<TSender, object>, IObservedChange<TSender, object>, IObservedChange<TSender, object>, IObservedChange<TSender, object>, IObservedChange<TSender, object>, TRet> selector)
         {
                         return Observable.CombineLatest(

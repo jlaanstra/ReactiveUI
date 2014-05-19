@@ -78,6 +78,9 @@
     <Compile Include="Cocoa\RouterUINavigationController.cs" />
     <Compile Include="Cocoa\TargetActionCommandBinder.cs" />
     <Compile Include="Cocoa\ViewModelViewHost.cs" />
+    <Compile Include="ExpressionMixins.cs" />
+    <Compile Include="ExpressionRewriter.cs" />
+    <Compile Include="ObservedChangeMixin.cs" />
     <Compile Include="Platform\FlexibleCommandBinder.cs" />
     <Compile Include="Platform\ComponentModelTypeConverter.cs" />
     <Compile Include="Platform\Registrations.cs" />
@@ -119,7 +122,6 @@
     <Compile Include="MessageBus.cs" />
     <Compile Include="NullDefaultPropertyBindingProvider.cs" />
     <Compile Include="ObservableAsPropertyHelper.cs" />
-    <Compile Include="ObservedChangedMixin.cs" />
     <Compile Include="OrderedComparer.cs" />
     <Compile Include="POCOObservableForProperty.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -133,6 +135,7 @@
     <Compile Include="ReactiveObject.cs" />
     <Compile Include="RefcountDisposeWrapper.cs" />
     <Compile Include="Reflection.cs" />
+    <Compile Include="ReflectionMixins.cs" />
     <Compile Include="RegisterableInterfaces.cs" />
     <Compile Include="Registrations.cs" />
     <Compile Include="RoutableViewModelMixin.cs" />
